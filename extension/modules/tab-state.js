@@ -109,7 +109,8 @@ export class TabState {
     if (limit === null) {
       return [...logs];
     }
-    return logs.slice(-limit);
+    // Since logs are prepended (newest first), get first N items, not last N
+    return logs.slice(0, limit);
   }
 
   getConsoleLogCount() {
