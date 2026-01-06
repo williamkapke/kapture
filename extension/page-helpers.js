@@ -637,7 +637,7 @@ const helpers = {
   },
 
   // Scroll page or element
-  scroll: ({selector, xpath, x, y, behavior, block = 'center', inline = 'nearest'}) => {
+  scroll: ({selector, xpath, x, y, direction, behavior, block = 'center', inline = 'nearest'}) => {
     try {
       // Case 1: Scroll to element
       if (selector || xpath) {
@@ -667,7 +667,28 @@ const helpers = {
         }, selector, xpath);
       }
 
-      // Case 2: Scroll by coordinates
+      // Case 2: Scroll by page/viewport height (direction)
+      if (direction === 'up' || direction === 'down') {
+        const viewportHeight = window.innerHeight;
+        const scrollAmount = direction === 'down' ? viewportHeight : -viewportHeight;
+        const scrollBehavior = behavior === 'instant' ? 'instant' : 'smooth';
+
+        window.scrollBy({
+          left: 0,
+          top: scrollAmount,
+          behavior: scrollBehavior
+        });
+
+        return respondWith({
+          scrolled: true,
+          scrollType: 'page',
+          direction: direction,
+          scrolledBy: { x: 0, y: scrollAmount },
+          viewportHeight: viewportHeight
+        });
+      }
+
+      // Case 3: Scroll by coordinates
       if (typeof x === 'number' || typeof y === 'number') {
         const scrollX = x ?? 0;
         const scrollY = y ?? 0;
@@ -702,7 +723,7 @@ const helpers = {
 
       // No valid scroll target provided
       return respondWithError('SCROLL_TARGET_REQUIRED',
-        'Either selector/xpath or x/y coordinates required for scrolling');
+        'Either selector/xpath, direction, or x/y coordinates required for scrolling');
 
     } catch (e) {
       return respondWithError('SCROLL_ERROR', e.message, selector, xpath);
@@ -774,6 +795,43 @@ const helpers = {
     return respondWith({
       styles: styles,
       propertiesRetrieved: propsToGet.length
+    }, selector, xpath);
+  },
+
+  // Get text content from element
+  get_text: ({selector, xpath, includeHidden = false, trim = true}) => {
+    if (!selector && !xpath) return requireSelectorOrXpath();
+
+    let element;
+    try {
+      element = findAllElements(selector, xpath)[0];
+    } catch (e) {
+      const errorCode = selector ? 'INVALID_SELECTOR' : 'INVALID_XPATH';
+      return respondWithError(errorCode, e.message, selector, xpath);
+    }
+
+    if (!element) return elementNotFound(selector, xpath);
+
+    // Get text content based on visibility preference
+    let text;
+    if (includeHidden) {
+      // textContent includes hidden elements
+      text = element.textContent || '';
+    } else {
+      // innerText respects CSS visibility (only visible text)
+      text = element.innerText || '';
+    }
+
+    // Optionally trim and collapse whitespace
+    if (trim) {
+      text = text.trim().replace(/\s+/g, ' ');
+    }
+
+    return respondWith({
+      text: text,
+      length: text.length,
+      includeHidden: includeHidden,
+      trimmed: trim
     }, selector, xpath);
   }
 };

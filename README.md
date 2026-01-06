@@ -180,16 +180,41 @@ Then ask Claude to interact with web pages:
 
 ## Available MCP Tools
 
+### Navigation
 - `navigate` - Navigate to URL
 - `back` - Browser back button
 - `forward` - Browser forward button
 - `reload` - Reload the current page (similar to pressing F5)
+
+### Interaction
 - `click` - Click elements (uses first matching element, returns unique selector)
 - `hover` - Hover over elements (uses first matching element, returns unique selector)
 - `fill` - Fill input fields (uses first matching element, returns unique selector)
 - `select` - Select dropdown options (HTML `<select>` only, uses first matching element, returns unique selector)
 - `keypress` - Send keyboard events to the page or specific elements (supports modifier keys)
+- `focus` - Set focus on an element
+- `blur` - Remove focus from an element
+- `scroll` - Scroll to element, coordinates, or by page height (supports `direction: "up"` or `"down"` for full-page scrolling)
+
+### Data Extraction
 - `elements` - Query all elements matching a CSS selector or XPath with optional visibility filtering
+- `get_text` - Extract visible text content from an element (useful for reading posts, articles, labels)
+- `get_attribute` - Get a specific attribute value from an element (e.g., href, data-*, aria-*)
+- `get_computed_style` - Get computed CSS styles for an element
+- `dom` - Get outerHTML of an element or the body
+- `screenshot` - Capture screenshot of page or element
+
+### Tab Management
+- `list_tabs` - List all connected browser tabs
+- `tab_detail` - Get detailed info about a specific tab
+- `new_tab` - Open a new browser tab
+- `close` - Close a browser tab
+- `show` - Bring a tab to the front
+
+### Advanced
+- `evaluate` - Execute JavaScript code in the page context (supports async/await)
+- `console_logs` - Get console logs from a browser tab
+- `elementsFromPoint` - Get elements at specific coordinates
 
 **Note on Selectors**: Tools that accept a `selector` parameter (`click`, `hover`, `fill`, `select`, `keypress`, `screenshot`, `dom`) will only operate on the **first element** that matches the CSS selector. The tool response includes the unique selector of the actual element that was used, which may include an auto-generated ID if the element didn't have one.
 
@@ -230,6 +255,57 @@ Examples:
 
 // Close tab (Ctrl+W or Cmd+W on Mac)
 { "key": "Meta+w" }
+```
+
+### Scroll Tool
+
+The `scroll` tool provides multiple ways to scroll the page:
+
+```json
+// Scroll down one full page/viewport height
+{ "tabId": "123", "direction": "down" }
+
+// Scroll up one full page/viewport height
+{ "tabId": "123", "direction": "up" }
+
+// Scroll to bring an element into view
+{ "tabId": "123", "selector": "#comments-section", "block": "start" }
+
+// Scroll to absolute coordinates
+{ "tabId": "123", "x": 0, "y": 500 }
+
+// Scroll by relative amount
+{ "tabId": "123", "x": 0, "y": 200, "behavior": "relative" }
+```
+
+### Get Text Tool
+
+The `get_text` tool extracts visible text content from elements:
+
+```json
+// Get text from a post
+{ "tabId": "123", "selector": ".post-content" }
+
+// Get all text including hidden elements
+{ "tabId": "123", "selector": ".article", "includeHidden": true }
+
+// Get text without whitespace trimming
+{ "tabId": "123", "selector": ".code-block", "trim": false }
+```
+
+### Evaluate Tool
+
+The `evaluate` tool executes JavaScript in the page context:
+
+```json
+// Get the number of links on the page
+{ "tabId": "123", "expression": "return document.querySelectorAll('a').length" }
+
+// Get current scroll position
+{ "tabId": "123", "expression": "return { x: window.scrollX, y: window.scrollY }" }
+
+// Async operations are supported
+{ "tabId": "123", "expression": "const response = await fetch('/api/data'); return await response.json()" }
 ```
 
 ### MCP Resources

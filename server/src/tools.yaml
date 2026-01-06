@@ -311,8 +311,8 @@ tools:
   scroll:
     description: >-
       Scroll the page or a specific element. Can scroll to absolute coordinates,
-      by relative amounts, or to bring an element into view. Supports smooth
-      scrolling animation.
+      by relative amounts, by page/screen height, or to bring an element into view.
+      Supports smooth scrolling animation.
     required: [tabId]
     properties:
       tabId: *tabId
@@ -329,6 +329,14 @@ tools:
           Vertical scroll position or delta. When used with behavior 'absolute',
           scrolls to this Y coordinate. When used with behavior 'relative', scrolls
           by this amount. Ignored when selector/xpath is provided without coordinates.
+      direction:
+        type: string
+        description: >-
+          Scroll by one full viewport/page height in the specified direction.
+          'down' scrolls down one page, 'up' scrolls up one page. This is useful
+          for paginating through content like social media feeds. Takes precedence
+          over x/y coordinates when specified.
+        enum: ["up", "down"]
       behavior:
         type: string
         description: >-
@@ -386,3 +394,25 @@ tools:
           opacity, position, width, height, color, background-color, and font-size.
         items:
           type: string
+
+  get_text:
+    description: >-
+      Extract text content from an element. Returns the visible text without HTML tags.
+      Useful for reading post content, article text, labels, or any textual content
+      from the page. Can optionally include text from hidden elements.
+    required: [tabId]
+    <<: *oneOfSelectorOrXpath
+    properties:
+      tabId: *tabId
+      <<: *selectorAndXpath
+      includeHidden:
+        type: boolean
+        description: >-
+          If true, includes text from hidden elements (display:none, visibility:hidden).
+          Default is false (only visible text).
+        default: false
+      trim:
+        type: boolean
+        description: >-
+          If true, trims whitespace and collapses multiple spaces. Default is true.
+        default: true
