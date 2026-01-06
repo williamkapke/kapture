@@ -303,11 +303,48 @@ function respondWith(obj, selector, xpath) {
     ...obj
   };
 }
-function respondWithError(code, message, selector, xpath) {
-  return respondWith({ error: { code, message } }, selector, xpath);
+function respondWithError(code, message, selector, xpath, details = {}) {
+  return respondWith({ error: { code, message, ...details } }, selector, xpath);
 }
-function elementNotFound(selector, xpath) {
-  return respondWithError('ELEMENT_NOT_FOUND', 'Element not found', selector, xpath);
+function elementNotFound(selector, xpath, additionalInfo = {}) {
+  // Try to provide helpful context about what was searched
+  let message = 'Element not found';
+  const details = { ...additionalInfo };
+
+  if (selector) {
+    // Check if selector syntax is valid
+    try {
+      const matchCount = document.querySelectorAll(selector).length;
+      details.matchCount = matchCount;
+      if (matchCount === 0) {
+        // Try to suggest similar elements
+        const tagMatch = selector.match(/^([a-z]+)/i);
+        if (tagMatch) {
+          const similarCount = document.querySelectorAll(tagMatch[1]).length;
+          if (similarCount > 0) {
+            details.hint = `Found ${similarCount} <${tagMatch[1]}> elements on page. Check if selector is correct.`;
+          }
+        }
+        message = `No elements match selector "${selector}"`;
+      }
+    } catch (e) {
+      message = `Invalid CSS selector: ${selector}`;
+      details.syntaxError = e.message;
+    }
+  } else if (xpath) {
+    try {
+      const result = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      details.matchCount = result.snapshotLength;
+      if (result.snapshotLength === 0) {
+        message = `No elements match XPath "${xpath}"`;
+      }
+    } catch (e) {
+      message = `Invalid XPath expression: ${xpath}`;
+      details.syntaxError = e.message;
+    }
+  }
+
+  return respondWithError('ELEMENT_NOT_FOUND', message, selector, xpath, details);
 }
 function requireSelectorOrXpath(selector, xpath) {
   return respondWithError('SELECTOR_OR_XPATH_REQUIRED', 'Selector or XPath parameter required', selector, xpath);
@@ -570,6 +607,174 @@ const helpers = {
     } catch (e) {
       return respondWithError('MOVE_MOUSE_SVG_ERROR', e.message);
     }
+  },
+
+  // Execute JavaScript in page context
+  evaluate: async ({expression}) => {
+    if (!expression || typeof expression !== 'string') {
+      return respondWithError('EXPRESSION_REQUIRED', 'JavaScript expression is required');
+    }
+
+    try {
+      // Wrap in async function to support await
+      const asyncWrapper = `(async () => { ${expression} })()`;
+      const result = await eval(asyncWrapper);
+
+      // Serialize the result for JSON transport
+      const serialized = serializeValue(result);
+
+      return respondWith({
+        evaluated: true,
+        result: serialized,
+        resultType: typeof result
+      });
+    } catch (e) {
+      return respondWithError('EVALUATION_ERROR', e.message, null, null, {
+        name: e.name,
+        stack: e.stack?.split('\n').slice(0, 5).join('\n')
+      });
+    }
+  },
+
+  // Scroll page or element
+  scroll: ({selector, xpath, x, y, behavior, block = 'center', inline = 'nearest'}) => {
+    try {
+      // Case 1: Scroll to element
+      if (selector || xpath) {
+        let element;
+        try {
+          element = findAllElements(selector, xpath)[0];
+        } catch (e) {
+          const errorCode = selector ? 'INVALID_SELECTOR' : 'INVALID_XPATH';
+          return respondWithError(errorCode, e.message, selector, xpath);
+        }
+
+        if (!element) return elementNotFound(selector, xpath);
+
+        const scrollBehavior = behavior === 'instant' ? 'instant' : 'smooth';
+
+        element.scrollIntoView({
+          behavior: scrollBehavior,
+          block: block,
+          inline: inline
+        });
+
+        const rect = element.getBoundingClientRect();
+        return respondWith({
+          scrolled: true,
+          scrollType: 'element',
+          elementPosition: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+        }, selector, xpath);
+      }
+
+      // Case 2: Scroll by coordinates
+      if (typeof x === 'number' || typeof y === 'number') {
+        const scrollX = x ?? 0;
+        const scrollY = y ?? 0;
+        const scrollBehavior = (behavior === 'smooth' || behavior === 'instant') ? behavior : 'instant';
+
+        if (behavior === 'relative') {
+          // Scroll by relative amount
+          window.scrollBy({
+            left: scrollX,
+            top: scrollY,
+            behavior: scrollBehavior === 'instant' ? 'instant' : 'smooth'
+          });
+          return respondWith({
+            scrolled: true,
+            scrollType: 'relative',
+            scrolledBy: { x: scrollX, y: scrollY }
+          });
+        } else {
+          // Scroll to absolute position
+          window.scrollTo({
+            left: scrollX,
+            top: scrollY,
+            behavior: scrollBehavior
+          });
+          return respondWith({
+            scrolled: true,
+            scrollType: 'absolute',
+            scrolledTo: { x: scrollX, y: scrollY }
+          });
+        }
+      }
+
+      // No valid scroll target provided
+      return respondWithError('SCROLL_TARGET_REQUIRED',
+        'Either selector/xpath or x/y coordinates required for scrolling');
+
+    } catch (e) {
+      return respondWithError('SCROLL_ERROR', e.message, selector, xpath);
+    }
+  },
+
+  // Get attribute value from element
+  get_attribute: ({selector, xpath, name}) => {
+    if (!selector && !xpath) return requireSelectorOrXpath();
+    if (!name || typeof name !== 'string') {
+      return respondWithError('ATTRIBUTE_NAME_REQUIRED', 'Attribute name is required');
+    }
+
+    let element;
+    try {
+      element = findAllElements(selector, xpath)[0];
+    } catch (e) {
+      const errorCode = selector ? 'INVALID_SELECTOR' : 'INVALID_XPATH';
+      return respondWithError(errorCode, e.message, selector, xpath);
+    }
+
+    if (!element) return elementNotFound(selector, xpath);
+
+    const value = element.getAttribute(name);
+    const hasAttribute = element.hasAttribute(name);
+
+    return respondWith({
+      attribute: name,
+      value: value,
+      exists: hasAttribute,
+      // Include all attributes for context
+      allAttributes: Array.from(element.attributes).map(attr => attr.name)
+    }, selector, xpath);
+  },
+
+  // Get computed CSS styles from element
+  get_computed_style: ({selector, xpath, properties}) => {
+    if (!selector && !xpath) return requireSelectorOrXpath();
+
+    let element;
+    try {
+      element = findAllElements(selector, xpath)[0];
+    } catch (e) {
+      const errorCode = selector ? 'INVALID_SELECTOR' : 'INVALID_XPATH';
+      return respondWithError(errorCode, e.message, selector, xpath);
+    }
+
+    if (!element) return elementNotFound(selector, xpath);
+
+    const computedStyle = window.getComputedStyle(element);
+
+    // Default properties if none specified
+    const defaultProperties = [
+      'display', 'visibility', 'opacity', 'position',
+      'width', 'height', 'margin', 'padding',
+      'color', 'background-color', 'font-size', 'font-family',
+      'z-index', 'overflow', 'pointer-events'
+    ];
+
+    const propsToGet = (properties && Array.isArray(properties) && properties.length > 0)
+      ? properties
+      : defaultProperties;
+
+    const styles = {};
+    for (const prop of propsToGet) {
+      styles[prop] = computedStyle.getPropertyValue(prop);
+    }
+
+    return respondWith({
+      styles: styles,
+      propertiesRetrieved: propsToGet.length
+    }, selector, xpath);
   }
 };
 

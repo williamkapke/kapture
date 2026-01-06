@@ -284,9 +284,105 @@ tools:
 
   show:
     description: >-
-      Brings the browser tab to the front and focuses it. This will switch to 
-      the tab's window and make it the active tab. Useful for directing user 
+      Brings the browser tab to the front and focuses it. This will switch to
+      the tab's window and make it the active tab. Useful for directing user
       attention to a specific tab when managing multiple browser tabs.
     required: [tabId]
     properties:
       tabId: *tabId
+
+  evaluate:
+    description: >-
+      Execute JavaScript code in the browser tab's page context. The code runs
+      with full access to the page's DOM, window object, and JavaScript APIs.
+      Returns the result of the expression (must be JSON-serializable). Use for
+      complex DOM manipulations, extracting data, or operations not covered by
+      other tools. Note: Code runs in page context, not extension context.
+    required: [tabId, expression]
+    properties:
+      tabId: *tabId
+      expression:
+        type: string
+        description: >-
+          JavaScript code to execute. Can be a single expression or multiple
+          statements. The return value of the last expression will be returned.
+          For async operations, use await (the code is wrapped in an async function).
+
+  scroll:
+    description: >-
+      Scroll the page or a specific element. Can scroll to absolute coordinates,
+      by relative amounts, or to bring an element into view. Supports smooth
+      scrolling animation.
+    required: [tabId]
+    properties:
+      tabId: *tabId
+      <<: *selectorAndXpath
+      x:
+        type: number
+        description: >-
+          Horizontal scroll position or delta. When used with behavior 'absolute',
+          scrolls to this X coordinate. When used with behavior 'relative', scrolls
+          by this amount. Ignored when selector/xpath is provided without coordinates.
+      y:
+        type: number
+        description: >-
+          Vertical scroll position or delta. When used with behavior 'absolute',
+          scrolls to this Y coordinate. When used with behavior 'relative', scrolls
+          by this amount. Ignored when selector/xpath is provided without coordinates.
+      behavior:
+        type: string
+        description: >-
+          Scroll behavior: 'smooth' for animated scrolling, 'instant' for immediate
+          jump, 'absolute' for scrolling to exact coordinates, 'relative' for scrolling
+          by a delta amount. Default is 'smooth' when scrolling to element, 'absolute'
+          when using coordinates.
+        enum: ["smooth", "instant", "absolute", "relative"]
+      block:
+        type: string
+        description: >-
+          When scrolling to an element, where to align it vertically: 'start' (top),
+          'center', 'end' (bottom), or 'nearest'. Default is 'center'.
+        default: "center"
+        enum: ["start", "center", "end", "nearest"]
+      inline:
+        type: string
+        description: >-
+          When scrolling to an element, where to align it horizontally: 'start' (left),
+          'center', 'end' (right), or 'nearest'. Default is 'nearest'.
+        default: "nearest"
+        enum: ["start", "center", "end", "nearest"]
+
+  get_attribute:
+    description: >-
+      Get the value of a specific attribute from an element. Returns the attribute
+      value or null if the attribute doesn't exist. Useful for reading data attributes,
+      aria attributes, or any HTML attribute.
+    required: [tabId, name]
+    <<: *oneOfSelectorOrXpath
+    properties:
+      tabId: *tabId
+      <<: *selectorAndXpath
+      name:
+        type: string
+        description: >-
+          The name of the attribute to retrieve (e.g., 'href', 'data-id', 'aria-label',
+          'class', 'disabled')
+
+  get_computed_style:
+    description: >-
+      Get computed CSS style values for an element. Returns the final, resolved
+      values after all CSS rules are applied. Useful for checking visibility,
+      dimensions, colors, and other styling properties.
+    required: [tabId]
+    <<: *oneOfSelectorOrXpath
+    properties:
+      tabId: *tabId
+      <<: *selectorAndXpath
+      properties:
+        type: array
+        description: >-
+          List of CSS property names to retrieve (e.g., ['display', 'color', 'font-size']).
+          If not specified, returns a common set of properties including display, visibility,
+          opacity, position, width, height, color, background-color, and font-size.
+        items:
+          type: string
