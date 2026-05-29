@@ -117,7 +117,7 @@ export class BrowserCommandHandler {
         command = `start ${exeName} "${targetUrl}"`;
       } else {
         // Use system default browser
-        command = `start "${targetUrl}"`;
+        command = `start "" "${targetUrl}"`;
       }
     } else {
       // Linux

@@ -11,7 +11,7 @@ process.title = 'Kapture Setup';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const localhost_welcome = 'http://localhost:61822/welcome';
+const localhost_welcome = 'http://127.0.0.1:61822/welcome';
 
 async function setup() {
   console.log('Setup Server...');
@@ -40,7 +40,7 @@ async function setup() {
 
   try {
 
-    const transport = new WebSocketClientTransport(new URL('ws://localhost:61822/mcp'));
+    const transport = new WebSocketClientTransport(new URL('ws://127.0.0.1:61822/mcp'));
     await client.connect(transport);
 
     // Keep looking for the welcome tab

@@ -29,12 +29,12 @@ const ASSISTANTS: Record<string, AssistantConfig> = {
     key: 'claude-desktop',
     configPaths: {
       darwin: join(homedir(), 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json'),
-      win32: join(process.env.APPDATA || '', 'Claude', 'claude_desktop_config.json'),
+      win32: process.env.APPDATA ? join(process.env.APPDATA, 'Claude', 'claude_desktop_config.json') : undefined,
       linux: join(homedir(), '.config', 'Claude', 'claude_desktop_config.json')
     },
     appPaths: {
       darwin: '/Applications/Claude.app',
-      win32: join(process.env.PROGRAMFILES || '', 'Claude', 'Claude.exe'),
+      win32: process.env.PROGRAMFILES ? join(process.env.PROGRAMFILES, 'Claude', 'Claude.exe') : undefined,
       linux: '/usr/bin/claude-desktop'
     },
     configKey: 'mcpServers'
@@ -52,12 +52,12 @@ const ASSISTANTS: Record<string, AssistantConfig> = {
     key: 'vscode',
     configPaths: {
       darwin: join(homedir(), 'Library', 'Application Support', 'Code', 'User', 'settings.json'),
-      win32: join(process.env.APPDATA || '', 'Code', 'User', 'settings.json'),
+      win32: process.env.APPDATA ? join(process.env.APPDATA, 'Code', 'User', 'settings.json') : undefined,
       linux: join(homedir(), '.config', 'Code', 'User', 'settings.json')
     },
     appPaths: {
       darwin: '/Applications/Visual Studio Code.app',
-      win32: join(process.env.PROGRAMFILES || '', 'Microsoft VS Code', 'Code.exe'),
+      win32: process.env.PROGRAMFILES ? join(process.env.PROGRAMFILES, 'Microsoft VS Code', 'Code.exe') : undefined,
       linux: '/usr/bin/code'
     },
     configKey: 'mcp.servers'
@@ -71,7 +71,7 @@ const ASSISTANTS: Record<string, AssistantConfig> = {
     },
     appPaths: {
       darwin: '/Applications/Cursor.app',
-      win32: join(process.env.LOCALAPPDATA || '', 'Programs', 'cursor', 'Cursor.exe'),
+      win32: process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, 'Programs', 'cursor', 'Cursor.exe') : undefined,
       linux: '/usr/bin/cursor'
     },
     configKey: 'mcpServers'

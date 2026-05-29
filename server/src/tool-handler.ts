@@ -76,7 +76,7 @@ export class ToolHandler {
         if (screenshotArgs?.quality) params.append('quality', String(screenshotArgs.quality));
 
         const queryString = params.toString();
-        const screenshotUrl = `http://localhost:61822/tab/${screenshotArgs?.tabId}/screenshot/view${queryString ? '?' + queryString : ''}`;
+        const screenshotUrl = `http://127.0.0.1:61822/tab/${screenshotArgs?.tabId}/screenshot/view${queryString ? '?' + queryString : ''}`;
 
         const enhancedResult = {
           preview: screenshotUrl,

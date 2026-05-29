@@ -31,6 +31,7 @@
     "build": "tsc && cp src/*.yaml dist/ && chmod +x dist/cli.js dist/index.js dist/bridge.js dist/setup.js",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
+    "test": "tsx --test src/*.test.ts",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
