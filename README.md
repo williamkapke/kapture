@@ -4,7 +4,7 @@ Kapture is a Chrome DevTools Extension that enables browser automation through t
 
 **✨ Key Feature**: Multiple AI clients can connect to the same server! Claude Desktop, Cline, and other MCP clients can all control browser tabs through a single server instance.
 
-![Available in the Chrome Web Store](https://to.kap.co/kapture-extension)]
+[Available in the Chrome Web Store](https://to.kap.co/kapture-extension)
 
 ![Kapture DevTools Extension Panel](website/assets/images/ScreenshotWithExtensionPanel.webp)
 
