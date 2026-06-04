@@ -52,12 +52,17 @@ export async function forward({tabId}) {
 }
 
 export async function close({tabId}) {
+  // Verify the tab exists first so an invalid id still reports CLOSE_FAILED.
   try {
-    await chrome.tabs.remove(tabId);
-    return { success: true, closed: true };
+    await chrome.tabs.get(tabId);
   } catch (error) {
     return { success: false, error: { code: 'CLOSE_FAILED', message: error.message } };
   }
+  // Defer the actual removal so the command response is delivered before the
+  // tab's connection is torn down. Removing it synchronously drops the ack and
+  // the client times out waiting for it.
+  setTimeout(() => { chrome.tabs.remove(tabId).catch(() => {}); }, 0);
+  return { success: true, closed: true };
 }
 
 export async function reload({tabId}) {
