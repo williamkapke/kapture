@@ -6,7 +6,7 @@
   "description": "Remote browser automation via MCP - DevTools Extension",
   "author": "William Kapke",
   "homepage_url": "https://github.com/williamkapke/kapture",
-  "permissions": ["activeTab", "debugger"],
+  "permissions": ["activeTab", "debugger", "storage"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js",

@@ -350,6 +350,25 @@ html, body {
   color: var(--text-primary);
 }
 
+.keepalive-setting {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+#keepalive-seconds {
+  width: 48px;
+  padding: 3px 4px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 12px;
+  text-align: right;
+}
+
 /* Layout */
 .panel-container {
   display: flex;
