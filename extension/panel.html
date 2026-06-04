@@ -47,6 +47,11 @@
     <!-- Footer -->
     <div class="footer">
       <span class="console-count" id="console-count">Console: 0</span>
+      <label class="keepalive-setting" title="Send a keepalive ping on this interval to hold the connection open during idle periods">
+        Keep-alive
+        <input type="number" id="keepalive-seconds" min="5" max="600" step="5">
+        s
+      </label>
       <button class="clear-button" id="clear-logs">Clear Logs</button>
     </div>
   </div>

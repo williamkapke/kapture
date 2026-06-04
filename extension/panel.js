@@ -53,6 +53,29 @@ function initializeUI() {
 
   // Resize handle
   initializeResizeHandle();
+
+  // Keep-alive interval setting (#14)
+  initializeKeepaliveSetting();
+}
+
+// Read/write the configurable keepalive interval (seconds) from chrome.storage.
+// The service worker (tab-manager) reads the same key and re-arms its pings.
+function initializeKeepaliveSetting() {
+  const input = document.getElementById('keepalive-seconds');
+  if (!input) return;
+
+  chrome.storage.local.get('keepaliveSeconds', ({ keepaliveSeconds }) => {
+    const secs = Number(keepaliveSeconds);
+    input.value = Number.isFinite(secs) && secs > 0 ? secs : 30;
+  });
+
+  input.addEventListener('change', () => {
+    let secs = parseInt(input.value, 10);
+    if (!Number.isFinite(secs) || secs < 5) secs = 5;
+    if (secs > 600) secs = 600;
+    input.value = secs;
+    chrome.storage.local.set({ keepaliveSeconds: secs });
+  });
 }
 
 // Update UI based on connection state

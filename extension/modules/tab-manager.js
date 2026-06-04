@@ -5,6 +5,53 @@ export class TabManager {
   constructor() {
     this.tabs = new Map(); // tabId -> TabState
     this.listeners = new Set(); // State change listeners
+    this.keepaliveMs = 30000; // configurable via the 'keepaliveSeconds' setting (#14)
+    this._initKeepaliveSetting();
+  }
+
+  // Load the configurable keepalive interval and react to panel changes.
+  async _initKeepaliveSetting() {
+    try {
+      const { keepaliveSeconds } = await chrome.storage.local.get('keepaliveSeconds');
+      this.keepaliveMs = this._keepaliveMsFrom(keepaliveSeconds);
+    } catch (e) { /* storage unavailable -> keep default */ }
+
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'local' || !changes.keepaliveSeconds) return;
+      this.keepaliveMs = this._keepaliveMsFrom(changes.keepaliveSeconds.newValue);
+      this._restartKeepalives();
+    });
+  }
+
+  _keepaliveMsFrom(seconds) {
+    const n = Number(seconds);
+    return Number.isFinite(n) && n > 0 ? n * 1000 : 30000;
+  }
+
+  _startKeepalive(tabState) {
+    const ws = tabState.websocket;
+    return setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+        } catch (e) {
+          console.error('Failed to send keepalive ping:', e);
+        }
+      }
+    }, this.keepaliveMs);
+  }
+
+  // Re-arm keepalive on connected tabs after the interval setting changes.
+  _restartKeepalives() {
+    for (const tabState of this.tabs.values()) {
+      if (tabState.keepaliveInterval) {
+        clearInterval(tabState.keepaliveInterval);
+        tabState.keepaliveInterval = null;
+      }
+      if (tabState.websocket && tabState.websocket.readyState === WebSocket.OPEN) {
+        tabState.keepaliveInterval = this._startKeepalive(tabState);
+      }
+    }
   }
 
   // Tab lifecycle
@@ -118,16 +165,8 @@ export class TabManager {
 
       this.sendMessage(tabState.tabId, registerMessage);
 
-      // Set up keepalive ping every 30 seconds
-      tabState.keepaliveInterval = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-          try {
-            ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
-          } catch (e) {
-            console.error('Failed to send keepalive ping:', e);
-          }
-        }
-      }, 30000);
+      // Set up keepalive ping (interval configurable via panel setting, default 30s) (#14)
+      tabState.keepaliveInterval = this._startKeepalive(tabState);
     };
 
     ws.onclose = () => {
