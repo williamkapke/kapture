@@ -31,7 +31,9 @@ async function getPortInfo(port: number): Promise<{ inUse: boolean; pid?: string
         command: parts[0]
       };
     } else if (platform === 'win32') {
-      const parts = stdout.trim().split(/\s+/);
+      const lines = stdout.trim().split('\n');
+      const listenLine = lines.find(l => l.includes('LISTENING')) || lines[0];
+      const parts = listenLine.trim().split(/\s+/);
       const pid = parts[parts.length - 1];
       return {
         inUse: true,

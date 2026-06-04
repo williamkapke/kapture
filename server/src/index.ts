@@ -262,20 +262,20 @@ wss.on('connection', (ws, request) => {
 async function startServer() {
   await checkIfPortInUse(PORT);
 
-  httpServer.listen(PORT, () => {
+  httpServer.listen(PORT, '127.0.0.1', () => {
     console.log('='.repeat(70));
     console.log('Kapture MCP Server Started');
     console.log();
     console.log('HTTP Endpoints:');
-    console.log(`  Discovery: http://localhost:${PORT}/`);
-    console.log(`  Resources: http://localhost:${PORT}/tabs`);
-    console.log(`  Tab info: http://localhost:${PORT}/tab/{tabId}`);
-    console.log(`  Console: http://localhost:${PORT}/tab/{tabId}/console`);
-    console.log(`  Screenshot: http://localhost:${PORT}/tab/{tabId}/screenshot`);
-    console.log(`  View image: http://localhost:${PORT}/tab/{tabId}/screenshot/view`);
-    console.log(`  Elements: http://localhost:${PORT}/tab/{tabId}/elements`);
-    console.log(`  Point query: http://localhost:${PORT}/tab/{tabId}/elementsFromPoint`);
-    console.log(`  DOM: http://localhost:${PORT}/tab/{tabId}/dom`);
+    console.log(`  Discovery: http://127.0.0.1:${PORT}/`);
+    console.log(`  Resources: http://127.0.0.1:${PORT}/tabs`);
+    console.log(`  Tab info: http://127.0.0.1:${PORT}/tab/{tabId}`);
+    console.log(`  Console: http://127.0.0.1:${PORT}/tab/{tabId}/console`);
+    console.log(`  Screenshot: http://127.0.0.1:${PORT}/tab/{tabId}/screenshot`);
+    console.log(`  View image: http://127.0.0.1:${PORT}/tab/{tabId}/screenshot/view`);
+    console.log(`  Elements: http://127.0.0.1:${PORT}/tab/{tabId}/elements`);
+    console.log(`  Point query: http://127.0.0.1:${PORT}/tab/{tabId}/elementsFromPoint`);
+    console.log(`  DOM: http://127.0.0.1:${PORT}/tab/{tabId}/dom`);
     console.log('='.repeat(70));
   });
 }

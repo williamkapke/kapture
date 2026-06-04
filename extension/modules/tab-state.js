@@ -48,7 +48,7 @@ export class TabState {
   constructor(tabId) {
     this.tabId = tabId;
     this.websocket = null;
-    this.connectionInfo = new ConnectionInfo('ws://localhost:61822');
+    this.connectionInfo = new ConnectionInfo('ws://127.0.0.1:61822');
     this.messages = [];
     this.consoleLogs = [];
     this.ports = new Set(); // Connected DevTools panels/popups
