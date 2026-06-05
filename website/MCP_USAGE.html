@@ -450,7 +450,7 @@ graph LR
 
         <h2 id="available-tools">Available Tools</h2>
 
-        <p>Kapture provides 23 tools organized into functional categories:</p>
+        <p>Kapture provides 24 tools organized into functional categories:</p>
 
         <h3>Navigation Tools</h3>
 
@@ -560,6 +560,17 @@ graph LR
                 <pre><code>{
   tabId: "tab_1234567890",
   selector: "#search-input"
+}</code></pre>
+            </div>
+
+            <div class="tool-card">
+                <h4>scroll</h4>
+                <p>Scroll an element into view (centered), or to an absolute document coordinate. Provide a selector/xpath, or x and/or y. Returns the resulting scroll position.</p>
+                <pre><code>{
+  tabId: "tab_1234567890",
+  selector: ".footer"
+  // OR: { y: 0 }  // jump to top
+  // OR: { x: 0, y: 1200 }
 }</code></pre>
             </div>
         </div>

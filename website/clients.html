@@ -302,6 +302,8 @@
         fields: [...SELECTOR_FIELDS, { name: 'value', placeholder: 'Option value', required: true }] },
       { group: 'Interaction', name: 'keypress', method: 'POST', path: '/keypress', desc: 'Send a keypress (supports modifiers)',
         fields: [{ name: 'key', placeholder: 'e.g. Enter, Control+a', required: true }, ...SELECTOR_FIELDS, { name: 'delay', type: 'number', placeholder: '50' }] },
+      { group: 'Interaction', name: 'scroll', method: 'POST', path: '/scroll', desc: 'Scroll an element into view, or to an x/y coordinate',
+        fields: [...SELECTOR_FIELDS, { name: 'x', type: 'number', placeholder: 'x px' }, { name: 'y', type: 'number', placeholder: 'y px' }] },
 
       // JavaScript execution (gated by the "Allow JS execution" toggle in the extension)
       { group: 'JavaScript', name: 'evaluate', method: 'POST', path: '/evaluate', desc: 'Execute JavaScript in the page (requires "Allow JS execution" in the extension)',

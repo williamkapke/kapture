@@ -481,6 +481,38 @@ const helpers = {
 
     return respondWith({ selected: true }, selector, xpath);
   },
+  scroll: ({selector, xpath, x, y}) => {
+    // Element target: bring it into view (handles nested scroll containers).
+    if (selector || xpath) {
+      let element;
+      try {
+        element = findAllElements(selector, xpath)[0];
+      } catch (e) {
+        const errorCode = selector ? 'INVALID_SELECTOR' : 'INVALID_XPATH';
+        return respondWithError(errorCode, e.message, selector, xpath);
+      }
+      if (!element) return elementNotFound(selector, xpath);
+
+      // 'instant' so getTabInfo() below reads the final position even when the
+      // page sets CSS scroll-behavior: smooth.
+      element.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' });
+      return respondWith({ scrolled: true }, selector, xpath);
+    }
+
+    // Coordinate target: absolute document position. Each axis is optional -
+    // a missing axis keeps the current offset (e.g. {y: 0} jumps to the top).
+    const hasX = typeof x === 'number';
+    const hasY = typeof y === 'number';
+    if (hasX || hasY) {
+      const de = document.documentElement;
+      const curX = window.pageXOffset || de.scrollLeft;
+      const curY = window.pageYOffset || de.scrollTop;
+      window.scrollTo({ left: hasX ? x : curX, top: hasY ? y : curY, behavior: 'instant' });
+      return respondWith({ scrolled: true });
+    }
+
+    return respondWithError('SCROLL_TARGET_REQUIRED', 'Provide a selector/xpath, or x and/or y coordinates');
+  },
   blur: ({selector, xpath}) => {
     if (!selector && !xpath) return requireSelectorOrXpath();
 

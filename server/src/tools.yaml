@@ -222,6 +222,25 @@ tools:
         default: "all"
         enum: ["true", "false", "all"]
 
+  scroll:
+    description: >-
+      Scroll the page to bring an element into view (CSS selector or XPath), or
+      to an absolute document coordinate. Provide a selector/xpath, OR x and/or
+      y pixel coordinates. When targeting an element it is centered vertically
+      in the viewport and nested scroll containers are handled. With
+      coordinates, a missing axis keeps the current offset (e.g. y:0 jumps to
+      the top). Returns the resulting scroll position.
+    required: [tabId]
+    properties:
+      tabId: *tabId
+      <<: *selectorAndXpath
+      x:
+        type: number
+        description: Absolute horizontal scroll position in pixels (document coordinates)
+      y:
+        type: number
+        description: Absolute vertical scroll position in pixels (document coordinates)
+
   elementsFromPoint:
     description: Get information about all elements at a specific coordinate in the viewport
     required: [tabId, x, y]

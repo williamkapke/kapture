@@ -189,12 +189,13 @@ Then ask Claude to interact with web pages:
 - `fill` - Fill input fields (uses first matching element, returns unique selector)
 - `select` - Select dropdown options (HTML `<select>` only, uses first matching element, returns unique selector)
 - `keypress` - Send keyboard events to the page or specific elements (supports modifier keys)
+- `scroll` - Scroll an element into view (selector/xpath) or to an absolute x/y document coordinate
 - `elements` - Query all elements matching a CSS selector or XPath with optional visibility filtering
 - `console_logs` - Get the tab's console contents (console messages, uncaught exceptions, browser-generated entries)
 - `watch_console` - Watch the console in real time for a required timeout (ms), then return everything logged during the window
 - `evaluate` - Execute JavaScript in the page and return the result. Off by default: only available after enabling the "Allow JS execution" toggle in the extension popup or DevTools panel for a connected tab. The grant resets on disconnect.
 
-**Note on Selectors**: Tools that accept a `selector` parameter (`click`, `hover`, `fill`, `select`, `keypress`, `screenshot`, `dom`) will only operate on the **first element** that matches the CSS selector. The tool response includes the unique selector of the actual element that was used, which may include an auto-generated ID if the element didn't have one.
+**Note on Selectors**: Tools that accept a `selector` parameter (`click`, `hover`, `fill`, `select`, `keypress`, `scroll`, `screenshot`, `dom`) will only operate on the **first element** that matches the CSS selector. The tool response includes the unique selector of the actual element that was used, which may include an auto-generated ID if the element didn't have one.
 
 **XPath Support**: All tools that accept a `selector` parameter also accept an `xpath` parameter as an alternative. This is particularly useful for:
 - Finding elements by text content: `xpath: "//button[contains(text(), 'Submit')]"`
