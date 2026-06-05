@@ -215,6 +215,48 @@
     $('#server-url').text(BASE);
 
     // ---------------------------------------------------------------
+    // Transport: fetch with Chrome's Local Network Access opt-in.
+    // An https page may only call loopback over http if the request
+    // declares targetAddressSpace (and the user grants the permission
+    // prompt). The enum value varies across Chromium versions
+    // ('loopback' after the spec rename, 'local' in older builds), so
+    // try each; other browsers ignore the unknown option entirely.
+    // 'loopback' goes first: builds that don't know it reject the
+    // value before any network attempt, while a wrong-but-known value
+    // costs a failed request and a console error.
+    // ---------------------------------------------------------------
+    async function localFetch(url, opts = {}) {
+      let lastError;
+      for (const space of ['loopback', 'local', undefined]) {
+        try {
+          return await fetch(url, space ? { ...opts, targetAddressSpace: space } : opts);
+        } catch (e) {
+          if (!(e instanceof TypeError)) throw e;
+          lastError = e; // invalid enum value or blocked - try the next form
+        }
+      }
+      throw lastError;
+    }
+
+    async function api(method, path, body) {
+      const opts = { method };
+      if (body !== undefined) {
+        opts.headers = { 'Content-Type': 'application/json' };
+        opts.body = JSON.stringify(body);
+      }
+      const res = await localFetch(BASE + path, opts);
+      let data = null;
+      try { data = await res.json(); } catch { /* non-JSON body */ }
+      if (!res.ok) {
+        const error = new Error(errorMessage(data) || res.status + ' ' + res.statusText);
+        error.status = res.status;
+        error.data = data;
+        throw error;
+      }
+      return data;
+    }
+
+    // ---------------------------------------------------------------
     // API definitions: every HTTP endpoint scoped to a tab
     // ---------------------------------------------------------------
     const SELECTOR_FIELDS = [
@@ -297,8 +339,8 @@
     // Home view
     // ---------------------------------------------------------------
     function loadHome() {
-      $.getJSON(BASE + '/clients')
-        .done(clients => {
+      api('GET', '/clients')
+        .then(clients => {
           $('#offline-banner').hide();
           const $tbody = $('#clients-table tbody').empty();
           (clients || []).forEach(c => {
@@ -313,10 +355,10 @@
           $('#clients-table').toggle(clients.length > 0);
           $('#clients-empty').toggle(clients.length === 0);
         })
-        .fail(() => $('#offline-banner').show());
+        .catch(() => $('#offline-banner').show());
 
-      $.getJSON(BASE + '/tabs')
-        .done(tabs => {
+      api('GET', '/tabs')
+        .then(tabs => {
           tabs = tabs || [];
           const $tbody = $('#tabs-table tbody').empty();
           tabs.forEach(tab => {
@@ -332,7 +374,7 @@
           $('#tabs-table').toggle(tabs.length > 0);
           $('#tabs-empty').toggle(tabs.length === 0);
         })
-        .fail(() => {});
+        .catch(() => {});
     }
 
     $('#tabs-table').on('click', 'tbody tr', function () {
@@ -344,15 +386,10 @@
     $('#new-tab-btn').on('click', function () {
       const $btn = $(this).prop('disabled', true).text('Opening…');
       const browser = $('#new-tab-browser').val();
-      $.ajax({
-        url: BASE + '/tabs',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(browser ? { browser } : {})
-      })
-        .done(loadHome)
-        .fail(xhr => alert('New tab failed: ' + errorMessage(xhr)))
-        .always(() => $btn.prop('disabled', false).text('New Tab'));
+      api('POST', '/tabs', browser ? { browser } : {})
+        .then(loadHome)
+        .catch(error => alert('New tab failed: ' + error.message))
+        .finally(() => $btn.prop('disabled', false).text('New Tab'));
     });
 
     function formatTime(value) {
@@ -367,8 +404,8 @@
     function loadTabDetail(tabId) {
       $('#detail-title').text('Tab ' + tabId);
       const $fields = $('#detail-fields').empty();
-      $.getJSON(BASE + '/tab/' + encodeURIComponent(tabId))
-        .done(tab => {
+      api('GET', '/tab/' + encodeURIComponent(tabId))
+        .then(tab => {
           $('#offline-banner').hide();
           $('#detail-title').text(tab.title || 'Tab ' + tabId);
           Object.entries(tab).forEach(([key, value]) => {
@@ -380,8 +417,8 @@
               .appendTo($fields);
           });
         })
-        .fail(xhr => {
-          $('<tr>').append($('<td colspan="2">').text('Failed to load tab: ' + errorMessage(xhr))).appendTo($fields);
+        .catch(error => {
+          $('<tr>').append($('<td colspan="2">').text('Failed to load tab: ' + error.message)).appendTo($fields);
         });
     }
 
@@ -456,36 +493,45 @@
       const $output = $result.find('.output').empty();
       $btn.prop('disabled', true);
 
-      // Screenshot returns an image - just point an <img> at the URL
+      // Screenshot returns an image - fetch it as a blob (an <img> src
+      // can't carry the Local Network Access opt-in)
       if (def.image) {
         const query = $.param(args);
-        const src = url + '?' + (query ? query + '&' : '') + 't=' + Date.now();
-        $status.addClass('ok').text('GET ' + url);
-        $output.append($('<img>').attr('src', src).on('error', function () {
-          $status.removeClass('ok').addClass('err').text('Failed to load screenshot - is the tab still connected?');
-          $(this).remove();
-        }));
-        $btn.prop('disabled', false);
+        const src = url + (query ? '?' + query : '');
+        localFetch(src, { cache: 'no-store' })
+          .then(res => {
+            if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+            return res.blob();
+          })
+          .then(blob => {
+            $status.addClass('ok').text('GET ' + src);
+            $output.append($('<img>').attr('src', URL.createObjectURL(blob)));
+          })
+          .catch(() => {
+            $status.addClass('err').text('Failed to load screenshot - is the tab still connected?');
+          })
+          .finally(() => $btn.prop('disabled', false));
         return;
       }
 
+      const path = '/tab/' + encodeURIComponent(tabId) + def.path;
       const request = def.method === 'GET'
-        ? $.ajax({ url: url + (Object.keys(args).length ? '?' + $.param(args) : ''), method: 'GET' })
+        ? api('GET', path + (Object.keys(args).length ? '?' + $.param(args) : ''))
         : def.method === 'DELETE'
-          ? $.ajax({ url: url, method: 'DELETE' })
-          : $.ajax({ url: url, method: 'POST', contentType: 'application/json', data: JSON.stringify(args) });
+          ? api('DELETE', path)
+          : api('POST', path, args);
 
       request
-        .done((data, _text, xhr) => {
-          $status.addClass('ok').text(xhr.status + ' ' + def.method + ' ' + url);
+        .then(data => {
+          $status.addClass('ok').text('200 ' + def.method + ' ' + url);
           $output.append($('<pre>').text(pretty(data)));
           if (def.name === 'close') location.hash = '#/';
         })
-        .fail(xhr => {
-          $status.addClass('err').text((xhr.status || 'error') + ' ' + def.method + ' ' + url);
-          $output.append($('<pre>').text(pretty(xhr.responseJSON || xhr.responseText || xhr.statusText)));
+        .catch(error => {
+          $status.addClass('err').text((error.status || 'error') + ' ' + def.method + ' ' + url);
+          $output.append($('<pre>').text(pretty(error.data || error.message)));
         })
-        .always(() => $btn.prop('disabled', false));
+        .finally(() => $btn.prop('disabled', false));
     }
 
     function pretty(data) {
@@ -495,8 +541,9 @@
       return JSON.stringify(data, null, 2);
     }
 
-    function errorMessage(xhr) {
-      return xhr.responseJSON?.error?.message || xhr.responseJSON?.error || xhr.responseText || xhr.statusText || 'request failed';
+    function errorMessage(data) {
+      const error = data?.error;
+      return error?.message || (typeof error === 'string' ? error : null);
     }
 
     // Start
