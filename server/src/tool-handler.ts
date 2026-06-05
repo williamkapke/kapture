@@ -1,3 +1,4 @@
+import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { BrowserCommandHandler } from './browser-command-handler.js';
 import { TabRegistry } from './tab-registry.js';
 import { allTools } from './yaml-loader.js';
@@ -112,7 +113,7 @@ export class ToolHandler {
     } catch (error: any) {
       if (error.name === 'ZodError') {
         const issues = error.issues.map((issue: any) => issue.message).join(', ');
-        throw new Error(issues);
+        throw new McpError(ErrorCode.InvalidParams, issues);
       }
       return {
         isError: true,

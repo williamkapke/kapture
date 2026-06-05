@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kapture - Local Server</title>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #1a202c;
+      background: #f7fafc;
+      padding: 30px 20px;
+    }
+
+    .container { max-width: 1000px; margin: 0 auto; }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    .server-url { color: #718096; font-size: 0.9rem; margin-bottom: 24px; font-family: monospace; }
+
+    h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 12px; }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .banner {
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      display: none;
+    }
+    .banner.error { display: block; background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    th { color: #718096; font-weight: 600; white-space: nowrap; }
+    td.mono, .mono { font-family: monospace; }
+
+    .empty { color: #a0aec0; font-style: italic; padding: 8px 12px; }
+
+    #tabs-table tbody tr { cursor: pointer; }
+    #tabs-table tbody tr:hover { background: #f0f4ff; }
+
+    .truncate { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    button {
+      font: inherit;
+      font-weight: 600;
+      color: #ffffff;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 6px;
+      padding: 8px 18px;
+      cursor: pointer;
+    }
+    button:hover { opacity: 0.9; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    button.secondary {
+      background: #ffffff;
+      color: #4a5568;
+      border: 1px solid #cbd5e0;
+    }
+
+    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+    .toolbar h2 { margin-bottom: 0; margin-right: auto; }
+
+    a.back { color: #667eea; text-decoration: none; font-weight: 600; display: inline-block; margin-bottom: 16px; }
+    a.back:hover { text-decoration: underline; }
+
+    input, select {
+      font: inherit;
+      padding: 7px 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      background: #fff;
+      color: #1a202c;
+    }
+    input:focus, select:focus { outline: 2px solid #667eea; border-color: transparent; }
+
+    /* API console */
+    .api-group-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #718096; margin: 20px 0 8px; }
+    details.api {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #ffffff;
+      margin-bottom: 8px;
+    }
+    details.api summary {
+      cursor: pointer;
+      padding: 10px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+      list-style: none;
+    }
+    details.api summary::-webkit-details-marker { display: none; }
+    details.api[open] summary { border-bottom: 1px solid #e2e8f0; }
+    .method {
+      font-family: monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: #fff;
+    }
+    .method.GET { background: #38a169; }
+    .method.POST { background: #667eea; }
+    .method.DELETE { background: #e53e3e; }
+    .api-path { font-family: monospace; font-size: 0.85rem; color: #4a5568; }
+    .api-desc { color: #a0aec0; font-size: 0.85rem; }
+    .api-body { padding: 16px; }
+    .api-fields { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+    .api-fields label { display: flex; flex-direction: column; font-size: 0.75rem; font-weight: 600; color: #718096; gap: 2px; }
+    .api-result {
+      display: none;
+      margin-top: 14px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 12px;
+    }
+    .api-result .status { font-family: monospace; font-size: 0.8rem; margin-bottom: 8px; }
+    .api-result .status.ok { color: #38a169; }
+    .api-result .status.err { color: #e53e3e; }
+    .api-result pre {
+      background: #1a202c;
+      color: #e2e8f0;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.8rem;
+      overflow: auto;
+      max-height: 400px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .api-result img { max-width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; margin-top: 8px; }
+
+    #detail-fields td:first-child { color: #718096; font-weight: 600; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Kapture Local Server</h1>
+    <div class="server-url" id="server-url"></div>
+    <div class="banner error" id="offline-banner">
+      Cannot reach the Kapture server. Make sure it is running on port 61822.
+    </div>
+
+    <!-- Home view: clients + tabs -->
+    <div id="view-home">
+      <div class="card">
+        <h2>MCP Clients</h2>
+        <table id="clients-table">
+          <thead>
+            <tr><th>ID</th><th>Type</th><th>Client</th><th>Version</th><th>Initialized</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="empty" id="clients-empty" style="display:none">No MCP clients connected.</div>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <h2>Connected Tabs</h2>
+          <select id="new-tab-browser">
+            <option value="">Default browser</option>
+            <option value="chrome">Chrome</option>
+            <option value="edge">Edge</option>
+            <option value="brave">Brave</option>
+            <option value="opera">Opera</option>
+            <option value="vivaldi">Vivaldi</option>
+          </select>
+          <button id="new-tab-btn">New Tab</button>
+          <button class="secondary" id="refresh-btn">Refresh</button>
+        </div>
+        <table id="tabs-table">
+          <thead>
+            <tr><th>Tab ID</th><th>Title</th><th>URL</th><th>Browser</th><th>Connected At</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div class="empty" id="tabs-empty" style="display:none">No tabs connected. Use the extension's toolbar popup to connect one.</div>
+      </div>
+    </div>
+
+    <!-- Tab detail view -->
+    <div id="view-tab" style="display:none">
+      <a href="#/" class="back">&larr; All tabs</a>
+      <div class="card">
+        <h2 id="detail-title"></h2>
+        <table><tbody id="detail-fields"></tbody></table>
+      </div>
+      <h2>API Console</h2>
+      <div id="api-console"></div>
+    </div>
+  </div>
+
+  <script>
+    const BASE = 'http://127.0.0.1:61822';
+    $('#server-url').text(BASE);
+
+    // ---------------------------------------------------------------
+    // API definitions: every HTTP endpoint scoped to a tab
+    // ---------------------------------------------------------------
+    const SELECTOR_FIELDS = [
+      { name: 'selector', placeholder: 'CSS selector' },
+      { name: 'xpath', placeholder: 'XPath (alternative)' }
+    ];
+
+    const API_DEFS = [
+      // Navigation
+      { group: 'Navigation', name: 'navigate', method: 'POST', path: '/navigate', desc: 'Navigate to a URL (waits for completion)',
+        fields: [{ name: 'url', placeholder: 'https://example.com', required: true }, { name: 'timeout', type: 'number', placeholder: '30000' }] },
+      { group: 'Navigation', name: 'back', method: 'POST', path: '/back', desc: 'Go back in history', fields: [] },
+      { group: 'Navigation', name: 'forward', method: 'POST', path: '/forward', desc: 'Go forward in history', fields: [] },
+      { group: 'Navigation', name: 'reload', method: 'POST', path: '/reload', desc: 'Reload the page', fields: [] },
+      { group: 'Navigation', name: 'show', method: 'POST', path: '/show', desc: 'Bring the tab to the front', fields: [] },
+
+      // Interaction
+      { group: 'Interaction', name: 'click', method: 'POST', path: '/click', desc: 'Click an element', fields: SELECTOR_FIELDS },
+      { group: 'Interaction', name: 'hover', method: 'POST', path: '/hover', desc: 'Hover over an element', fields: SELECTOR_FIELDS },
+      { group: 'Interaction', name: 'focus', method: 'POST', path: '/focus', desc: 'Focus an element', fields: SELECTOR_FIELDS },
+      { group: 'Interaction', name: 'blur', method: 'POST', path: '/blur', desc: 'Blur an element', fields: SELECTOR_FIELDS },
+      { group: 'Interaction', name: 'fill', method: 'POST', path: '/fill', desc: 'Fill an input with a value',
+        fields: [...SELECTOR_FIELDS, { name: 'value', placeholder: 'Value', required: true }] },
+      { group: 'Interaction', name: 'select', method: 'POST', path: '/select', desc: 'Select a dropdown option by value',
+        fields: [...SELECTOR_FIELDS, { name: 'value', placeholder: 'Option value', required: true }] },
+      { group: 'Interaction', name: 'keypress', method: 'POST', path: '/keypress', desc: 'Send a keypress (supports modifiers)',
+        fields: [{ name: 'key', placeholder: 'e.g. Enter, Control+a', required: true }, ...SELECTOR_FIELDS, { name: 'delay', type: 'number', placeholder: '50' }] },
+
+      // Inspection
+      { group: 'Inspection', name: 'screenshot', method: 'GET', path: '/screenshot/view', desc: 'Capture a screenshot', image: true,
+        fields: [...SELECTOR_FIELDS,
+          { name: 'scale', type: 'number', placeholder: '0.3' },
+          { name: 'format', options: ['', 'webp', 'jpeg', 'png'] },
+          { name: 'quality', type: 'number', placeholder: '0.85' }] },
+      { group: 'Inspection', name: 'dom', method: 'GET', path: '/dom', desc: 'Get outerHTML of body or an element', fields: SELECTOR_FIELDS },
+      { group: 'Inspection', name: 'elements', method: 'GET', path: '/elements', desc: 'Query elements matching a selector',
+        fields: [...SELECTOR_FIELDS, { name: 'visible', options: ['all', 'true', 'false'] }] },
+      { group: 'Inspection', name: 'elementsFromPoint', method: 'GET', path: '/elementsFromPoint', desc: 'Elements at viewport coordinates',
+        fields: [{ name: 'x', type: 'number', placeholder: '0', required: true }, { name: 'y', type: 'number', placeholder: '0', required: true }] },
+      { group: 'Inspection', name: 'console', method: 'GET', path: '/console', desc: 'Get console logs (newest first)',
+        fields: [{ name: 'level', options: ['', 'log', 'info', 'warn', 'error'] }, { name: 'limit', type: 'number', placeholder: '100' }, { name: 'before', placeholder: 'timestamp' }] },
+
+      // Tab management
+      { group: 'Tab Management', name: 'close', method: 'DELETE', path: '', desc: 'Close this tab', confirm: true, fields: [] }
+    ];
+
+    // ---------------------------------------------------------------
+    // Routing
+    // ---------------------------------------------------------------
+    let refreshTimer = null;
+
+    function route() {
+      const match = location.hash.match(/^#\/tab\/(.+)$/);
+      if (match) {
+        showTabView(decodeURIComponent(match[1]));
+      } else {
+        showHomeView();
+      }
+    }
+
+    $(window).on('hashchange', route);
+
+    function showHomeView() {
+      $('#view-tab').hide();
+      $('#view-home').show();
+      loadHome();
+      clearInterval(refreshTimer);
+      refreshTimer = setInterval(loadHome, 5000);
+    }
+
+    function showTabView(tabId) {
+      clearInterval(refreshTimer);
+      $('#view-home').hide();
+      $('#view-tab').show();
+      loadTabDetail(tabId);
+      renderApiConsole(tabId);
+    }
+
+    // ---------------------------------------------------------------
+    // Home view
+    // ---------------------------------------------------------------
+    function loadHome() {
+      $.getJSON(BASE + '/clients')
+        .done(clients => {
+          $('#offline-banner').hide();
+          const $tbody = $('#clients-table tbody').empty();
+          (clients || []).forEach(c => {
+            $('<tr>')
+              .append($('<td class="mono">').text(c.id))
+              .append($('<td>').text(c.type || ''))
+              .append($('<td>').text(c.clientInfo?.name || '—'))
+              .append($('<td>').text(c.clientInfo?.version || '—'))
+              .append($('<td>').text(c.initialized ? 'yes' : 'no'))
+              .appendTo($tbody);
+          });
+          $('#clients-table').toggle(clients.length > 0);
+          $('#clients-empty').toggle(clients.length === 0);
+        })
+        .fail(() => $('#offline-banner').show());
+
+      $.getJSON(BASE + '/tabs')
+        .done(tabs => {
+          tabs = tabs || [];
+          const $tbody = $('#tabs-table tbody').empty();
+          tabs.forEach(tab => {
+            $('<tr>')
+              .attr('data-tab-id', tab.tabId)
+              .append($('<td class="mono">').text(tab.tabId))
+              .append($('<td class="truncate">').attr('title', tab.title || '').text(tab.title || ''))
+              .append($('<td class="truncate mono">').attr('title', tab.url || '').text(tab.url || ''))
+              .append($('<td>').text(tab.browser || ''))
+              .append($('<td>').text(formatTime(tab.connectedAt)))
+              .appendTo($tbody);
+          });
+          $('#tabs-table').toggle(tabs.length > 0);
+          $('#tabs-empty').toggle(tabs.length === 0);
+        })
+        .fail(() => {});
+    }
+
+    $('#tabs-table').on('click', 'tbody tr', function () {
+      location.hash = '#/tab/' + encodeURIComponent($(this).attr('data-tab-id'));
+    });
+
+    $('#refresh-btn').on('click', loadHome);
+
+    $('#new-tab-btn').on('click', function () {
+      const $btn = $(this).prop('disabled', true).text('Opening…');
+      const browser = $('#new-tab-browser').val();
+      $.ajax({
+        url: BASE + '/tabs',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(browser ? { browser } : {})
+      })
+        .done(loadHome)
+        .fail(xhr => alert('New tab failed: ' + errorMessage(xhr)))
+        .always(() => $btn.prop('disabled', false).text('New Tab'));
+    });
+
+    function formatTime(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      return isNaN(date) ? String(value) : date.toLocaleString();
+    }
+
+    // ---------------------------------------------------------------
+    // Tab detail view
+    // ---------------------------------------------------------------
+    function loadTabDetail(tabId) {
+      $('#detail-title').text('Tab ' + tabId);
+      const $fields = $('#detail-fields').empty();
+      $.getJSON(BASE + '/tab/' + encodeURIComponent(tabId))
+        .done(tab => {
+          $('#offline-banner').hide();
+          $('#detail-title').text(tab.title || 'Tab ' + tabId);
+          Object.entries(tab).forEach(([key, value]) => {
+            if (value === undefined || value === null) return;
+            const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
+            $('<tr>')
+              .append($('<td>').text(key))
+              .append($('<td class="mono">').text(/At|Ping/.test(key) ? formatTime(value) : text))
+              .appendTo($fields);
+          });
+        })
+        .fail(xhr => {
+          $('<tr>').append($('<td colspan="2">').text('Failed to load tab: ' + errorMessage(xhr))).appendTo($fields);
+        });
+    }
+
+    // ---------------------------------------------------------------
+    // API console
+    // ---------------------------------------------------------------
+    function renderApiConsole(tabId) {
+      const $console = $('#api-console').empty();
+      let currentGroup = null;
+
+      API_DEFS.forEach((def, index) => {
+        if (def.group !== currentGroup) {
+          currentGroup = def.group;
+          $console.append($('<div class="api-group-title">').text(currentGroup));
+        }
+
+        const pathLabel = '/tab/{tabId}' + def.path;
+        const $details = $('<details class="api">').attr('data-def', index);
+        const $summary = $('<summary>')
+          .append($('<span class="method">').addClass(def.method).text(def.method))
+          .append($('<span class="api-path">').text(pathLabel))
+          .append($('<span class="api-desc">').text(def.desc));
+        const $body = $('<div class="api-body">');
+        const $fields = $('<div class="api-fields">');
+
+        def.fields.forEach(field => {
+          const $label = $('<label>').text(field.name + (field.required ? ' *' : ''));
+          if (field.options) {
+            const $select = $('<select>').attr('data-field', field.name);
+            field.options.forEach(opt => $select.append($('<option>').val(opt).text(opt || '(default)')));
+            $label.append($select);
+          } else {
+            $label.append(
+              $('<input>')
+                .attr('data-field', field.name)
+                .attr('data-type', field.type || 'string')
+                .attr('placeholder', field.placeholder || '')
+            );
+          }
+          $fields.append($label);
+        });
+
+        if (def.fields.length) $body.append($fields);
+        $body.append($('<button>').text('Execute').on('click', function () {
+          executeApi(def, tabId, $details, $(this));
+        }));
+        $body.append('<div class="api-result"><div class="status"></div><div class="output"></div></div>');
+
+        $details.append($summary).append($body);
+        $console.append($details);
+      });
+    }
+
+    function collectArgs($details) {
+      const args = {};
+      $details.find('[data-field]').each(function () {
+        const value = $(this).val().trim();
+        if (value === '') return;
+        const name = $(this).attr('data-field');
+        args[name] = $(this).attr('data-type') === 'number' ? Number(value) : value;
+      });
+      return args;
+    }
+
+    function executeApi(def, tabId, $details, $btn) {
+      if (def.confirm && !window.confirm('Close this tab?')) return;
+
+      const args = collectArgs($details);
+      const url = BASE + '/tab/' + encodeURIComponent(tabId) + def.path;
+      const $result = $details.find('.api-result').show();
+      const $status = $result.find('.status').removeClass('ok err').text('…');
+      const $output = $result.find('.output').empty();
+      $btn.prop('disabled', true);
+
+      // Screenshot returns an image - just point an <img> at the URL
+      if (def.image) {
+        const query = $.param(args);
+        const src = url + '?' + (query ? query + '&' : '') + 't=' + Date.now();
+        $status.addClass('ok').text('GET ' + url);
+        $output.append($('<img>').attr('src', src).on('error', function () {
+          $status.removeClass('ok').addClass('err').text('Failed to load screenshot - is the tab still connected?');
+          $(this).remove();
+        }));
+        $btn.prop('disabled', false);
+        return;
+      }
+
+      const request = def.method === 'GET'
+        ? $.ajax({ url: url + (Object.keys(args).length ? '?' + $.param(args) : ''), method: 'GET' })
+        : def.method === 'DELETE'
+          ? $.ajax({ url: url, method: 'DELETE' })
+          : $.ajax({ url: url, method: 'POST', contentType: 'application/json', data: JSON.stringify(args) });
+
+      request
+        .done((data, _text, xhr) => {
+          $status.addClass('ok').text(xhr.status + ' ' + def.method + ' ' + url);
+          $output.append($('<pre>').text(pretty(data)));
+          if (def.name === 'close') location.hash = '#/';
+        })
+        .fail(xhr => {
+          $status.addClass('err').text((xhr.status || 'error') + ' ' + def.method + ' ' + url);
+          $output.append($('<pre>').text(pretty(xhr.responseJSON || xhr.responseText || xhr.statusText)));
+        })
+        .always(() => $btn.prop('disabled', false));
+    }
+
+    function pretty(data) {
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch { return data; }
+      }
+      return JSON.stringify(data, null, 2);
+    }
+
+    function errorMessage(xhr) {
+      return xhr.responseJSON?.error?.message || xhr.responseJSON?.error || xhr.responseText || xhr.statusText || 'request failed';
+    }
+
+    // Start
+    route();
+  </script>
+</body>
+</html>

@@ -99,10 +99,17 @@ describe('Hover Tool Tests', function() {
   });
 
   it('should require either selector or xpath', async function() {
-    const resultData = await framework.callToolAndParse('hover', {});
+    let error;
+    try {
+      await framework.callToolAndParse('hover', {});
+    } catch (e) {
+      error = e;
+    }
 
-    expect(resultData).to.have.property('error');
-    expect(resultData.error).to.have.property('code').that.equals('SELECTOR_OR_XPATH_REQUIRED');
+    // Rejected by the server's input validation (-32602 Invalid params)
+    expect(error, 'expected a validation error').to.exist;
+    expect(error.code).to.equal(-32602);
+    expect(error.message).to.include('Either selector or xpath must be provided');
   });
 
   it('should handle invalid selector', async function() {

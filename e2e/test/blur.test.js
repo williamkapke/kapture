@@ -144,12 +144,17 @@ describe('Blur Tool Tests', function() {
   });
 
   it('should require either selector or xpath', async function() {
-    const resultData = await framework.callToolAndParse('blur', {});
+    let error;
+    try {
+      await framework.callToolAndParse('blur', {});
+    } catch (e) {
+      error = e;
+    }
 
-    // The error should come from the page helper requireSelectorOrXpath()
-    expect(resultData).to.have.property('error');
-    expect(resultData.error.code).to.equal('SELECTOR_OR_XPATH_REQUIRED');
-    expect(resultData.error.message).to.include('Selector or XPath');
+    // Rejected by the server's input validation (-32602 Invalid params)
+    expect(error, 'expected a validation error').to.exist;
+    expect(error.code).to.equal(-32602);
+    expect(error.message).to.include('Either selector or xpath must be provided');
   });
 
   it('should blur document.activeElement if different from target', async function() {

@@ -149,12 +149,19 @@ describe('Select Tool Tests', function() {
   });
 
   it('should require either selector or xpath', async function() {
-    const resultData = await framework.callToolAndParse('select', {
-      value: 'option1'
-    });
+    let error;
+    try {
+      await framework.callToolAndParse('select', {
+        value: 'option1'
+      });
+    } catch (e) {
+      error = e;
+    }
 
-    expect(resultData).to.have.property('error');
-    expect(resultData.error.code).to.equal('SELECTOR_OR_XPATH_REQUIRED');
+    // Rejected by the server's input validation (-32602 Invalid params)
+    expect(error, 'expected a validation error').to.exist;
+    expect(error.code).to.equal(-32602);
+    expect(error.message).to.include('Either selector or xpath must be provided');
   });
 
   it('should handle select with no options', async function() {

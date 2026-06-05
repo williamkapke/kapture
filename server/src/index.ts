@@ -71,21 +71,74 @@ const mcpServerManager = new MCPServerManager(
 // HTTP Server Setup
 // ========================================================================
 
+// Tab-scoped commands exposed over HTTP as POST /tab/{tabId}/{command}
+const HTTP_TAB_COMMANDS = new Set([
+  'navigate', 'back', 'forward', 'reload', 'show',
+  'click', 'hover', 'focus', 'blur', 'fill', 'select', 'keypress'
+]);
+
+function readJsonBody(req: import('http').IncomingMessage): Promise<any> {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+    });
+    req.on('end', () => {
+      if (!body.trim()) {
+        resolve({});
+        return;
+      }
+      try {
+        resolve(JSON.parse(body));
+      } catch {
+        reject(new Error('Invalid JSON body'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+/**
+ * Execute an MCP tool for an HTTP request and write the JSON response.
+ * Waits for the command to complete (same timeouts as the MCP tools).
+ */
+async function handleHttpToolCall(res: import('http').ServerResponse, name: string, args: any): Promise<void> {
+  try {
+    const result = await toolHandler.callTool(name, args);
+    const text = result.content[0].text;
+    let status = 200;
+    if (result.isError) {
+      const message = JSON.parse(text)?.error?.message || '';
+      status = message.includes('not found') ? 404 : 500;
+    }
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(text);
+  } catch (error: any) {
+    // callTool throws McpError on input validation failures; drop its
+    // "MCP error -32602: " message prefix for the HTTP response
+    const message = error.message.replace(/^MCP error -?\d+: /, '');
+    res.writeHead(400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: message }));
+  }
+}
+
 const httpServer = createServer(async (req, res) => {
   // Enable CORS for all endpoints
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
+    // Allow requests from public (https) pages to this local server (Chrome Private Network Access)
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
     res.writeHead(200);
     res.end();
     return;
   }
 
-  // Root endpoint - Server discovery and status
-  if (req.url === '/' && req.method === 'GET') {
+  // Connected MCP clients - server discovery and status
+  if (req.url === '/clients' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
 
     const connections = mcpServerManager.getConnectionInfo();
@@ -163,6 +216,42 @@ const httpServer = createServer(async (req, res) => {
       res.end(JSON.stringify({ error: 'Failed to configure assistants' }));
     }
     return;
+  }
+
+  // POST /tabs - open a new tab (waits for it to connect)
+  if (req.url === '/tabs' && req.method === 'POST') {
+    try {
+      const body = await readJsonBody(req);
+      await handleHttpToolCall(res, 'new_tab', body);
+    } catch (error: any) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+    return;
+  }
+
+  // POST /tab/{tabId}/{command} - execute a tab command (waits for completion)
+  if (req.url && req.method === 'POST') {
+    const match = req.url.match(/^\/tab\/([^/]+)\/([^/?]+)$/);
+    if (match && HTTP_TAB_COMMANDS.has(match[2])) {
+      try {
+        const body = await readJsonBody(req);
+        await handleHttpToolCall(res, match[2], { ...body, tabId: decodeURIComponent(match[1]) });
+      } catch (error: any) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: error.message }));
+      }
+      return;
+    }
+  }
+
+  // DELETE /tab/{tabId} - close the tab
+  if (req.url && req.method === 'DELETE') {
+    const match = req.url.match(/^\/tab\/([^/?]+)$/);
+    if (match) {
+      await handleHttpToolCall(res, 'close', { tabId: decodeURIComponent(match[1]) });
+      return;
+    }
   }
 
   // All other endpoints delegate to resource handler
@@ -267,7 +356,7 @@ async function startServer() {
     console.log('Kapture MCP Server Started');
     console.log();
     console.log('HTTP Endpoints:');
-    console.log(`  Discovery: http://127.0.0.1:${PORT}/`);
+    console.log(`  MCP clients: http://127.0.0.1:${PORT}/clients`);
     console.log(`  Resources: http://127.0.0.1:${PORT}/tabs`);
     console.log(`  Tab info: http://127.0.0.1:${PORT}/tab/{tabId}`);
     console.log(`  Console: http://127.0.0.1:${PORT}/tab/{tabId}/console`);
@@ -276,6 +365,9 @@ async function startServer() {
     console.log(`  Elements: http://127.0.0.1:${PORT}/tab/{tabId}/elements`);
     console.log(`  Point query: http://127.0.0.1:${PORT}/tab/{tabId}/elementsFromPoint`);
     console.log(`  DOM: http://127.0.0.1:${PORT}/tab/{tabId}/dom`);
+    console.log(`  Commands: POST http://127.0.0.1:${PORT}/tab/{tabId}/{command}`);
+    console.log(`  New tab: POST http://127.0.0.1:${PORT}/tabs`);
+    console.log(`  Close tab: DELETE http://127.0.0.1:${PORT}/tab/{tabId}`);
     console.log('='.repeat(70));
   });
 }

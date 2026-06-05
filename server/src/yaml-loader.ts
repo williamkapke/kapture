@@ -36,6 +36,11 @@ function preprocessToolDefinition(tool: any): ToolDefinition {
     inputSchema.required = tool.required;
   }
 
+  // Move oneOf if it exists (e.g. selector or xpath required)
+  if (tool.oneOf) {
+    inputSchema.oneOf = tool.oneOf;
+  }
+
   // Create the tool definition in standard format
   const toolDef: ToolDefinition = {
     name: tool.name,

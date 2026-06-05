@@ -18,6 +18,56 @@ const MCPWebSocketBridge = require('mcp2websocket');
 
 const HOST = '127.0.0.1';
 const PORT = 61822;
+
+// Synthetic JSON-RPC id for the replayed initialize request. Client ids are
+// numbers (or client-chosen strings), so this never collides.
+const REPLAY_INITIALIZE_ID = 'kapture-bridge-replay-initialize';
+
+/**
+ * mcp2websocket bridge that replays the MCP initialize handshake when the
+ * WebSocket reconnects (e.g. after a server restart). The server creates a
+ * fresh MCP connection per socket, so without the replay a reconnected bridge
+ * shows up uninitialized and without clientInfo. The replayed initialize uses
+ * a synthetic request id and its response is swallowed so the stdio client
+ * never sees a reply it didn't ask for.
+ */
+class ReplayingMCPWebSocketBridge extends MCPWebSocketBridge {
+  private initializeRequest: any = null;
+  private initializedNotification: any = null;
+  private everConnected = false;
+
+  constructor(url: string, options?: any) {
+    super(url, options);
+  }
+
+  sendToWebSocket(message: any): void {
+    if (message?.method === 'initialize' && message.id !== REPLAY_INITIALIZE_ID) {
+      this.initializeRequest = message;
+    } else if (message?.method === 'notifications/initialized') {
+      this.initializedNotification = message;
+    }
+    super.sendToWebSocket(message);
+  }
+
+  // mcp2websocket calls this on every WebSocket 'open'
+  flushMessageQueue(): void {
+    if (this.everConnected && this.initializeRequest) {
+      super.sendToWebSocket({ ...this.initializeRequest, id: REPLAY_INITIALIZE_ID });
+      if (this.initializedNotification) {
+        super.sendToWebSocket(this.initializedNotification);
+      }
+    }
+    this.everConnected = true;
+    super.flushMessageQueue();
+  }
+
+  sendToStdout(message: any): void {
+    if (message?.id === REPLAY_INITIALIZE_ID) {
+      return; // response to the replayed initialize
+    }
+    super.sendToStdout(message);
+  }
+}
 const serverPath = join(__dirname, 'index.js');
 const logPath = join(tmpdir(), 'kapture-server.log');
 
@@ -50,7 +100,7 @@ async function main() {
     process.exit(1);
   }
 
-  const bridge = new MCPWebSocketBridge(`ws://${HOST}:${PORT}/mcp`, {});
+  const bridge = new ReplayingMCPWebSocketBridge(`ws://${HOST}:${PORT}/mcp`, {});
   bridge.start();
   // Keep the process alive
   process.stdin.resume();
