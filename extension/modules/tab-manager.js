@@ -5,7 +5,7 @@ export class TabManager {
   constructor() {
     this.tabs = new Map(); // tabId -> TabState
     this.listeners = new Set(); // State change listeners
-    this.keepaliveMs = 30000; // configurable via the 'keepaliveSeconds' setting (#14)
+    this.keepaliveMs = 30000; // configurable via the 'keepaliveSeconds' setting
     this._initKeepaliveSetting();
   }
 
@@ -165,7 +165,7 @@ export class TabManager {
 
       this.sendMessage(tabState.tabId, registerMessage);
 
-      // Set up keepalive ping (interval configurable via panel setting, default 30s) (#14)
+      // Set up keepalive ping (interval configurable via panel setting, default 30s)
       tabState.keepaliveInterval = this._startKeepalive(tabState);
     };
 

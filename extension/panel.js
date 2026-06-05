@@ -54,7 +54,7 @@ function initializeUI() {
   // Resize handle
   initializeResizeHandle();
 
-  // Keep-alive interval setting (#14)
+  // Keep-alive interval setting
   initializeKeepaliveSetting();
 }
 
