@@ -137,6 +137,13 @@ const httpServer = createServer(async (req, res) => {
     return;
   }
 
+  // Root - send browsers to the hosted dashboard
+  if (req.url === '/' && req.method === 'GET') {
+    res.writeHead(302, { Location: 'https://williamkapke.github.io/kapture/clients.html' });
+    res.end();
+    return;
+  }
+
   // Connected MCP clients - server discovery and status
   if (req.url === '/clients' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
