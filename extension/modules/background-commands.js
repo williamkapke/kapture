@@ -4,6 +4,7 @@ import { navigate, back, forward, close, reload, show } from './background-navig
 import { screenshot } from './background-screenshot.js';
 import { getLogs, watchConsole } from './background-console.js';
 import { evaluate } from './background-evaluate.js';
+import { type, insertText, clear } from './background-text.js';
 
 export const getFromContentScript = async (tabId, command, params, ) => {
   return await chrome.tabs.sendMessage(tabId, { command, params });
@@ -122,5 +123,8 @@ export const backgroundCommands = {
   screenshot,
   getLogs,
   watchConsole,
-  evaluate
+  evaluate,
+  type,
+  insertText,
+  clear
 }

@@ -513,6 +513,39 @@ const helpers = {
 
     return respondWithError('SCROLL_TARGET_REQUIRED', 'Provide a selector/xpath, or x and/or y coordinates');
   },
+  // Select all content of the target (or focused) element. Used by the `clear`
+  // command - a DOM selection is reliable, unlike a synthetic Ctrl/Cmd+A which
+  // the browser doesn't honor as an edit command.
+  _selectAll: ({selector, xpath}) => {
+    let element;
+    if (selector || xpath) {
+      try {
+        element = findAllElements(selector, xpath)[0];
+      } catch (e) {
+        const errorCode = selector ? 'INVALID_SELECTOR' : 'INVALID_XPATH';
+        return respondWithError(errorCode, e.message, selector, xpath);
+      }
+      if (!element) return elementNotFound(selector, xpath);
+    } else {
+      element = document.activeElement;
+      if (!element || element === document.body) {
+        return respondWithError('NO_FOCUSED_ELEMENT', 'No element is focused to clear');
+      }
+    }
+
+    element.focus();
+    const tag = element.tagName.toLowerCase();
+    if ((tag === 'input' || tag === 'textarea') && typeof element.select === 'function') {
+      element.select();
+    } else {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    return respondWith({ selected: true }, selector, xpath);
+  },
   blur: ({selector, xpath}) => {
     if (!selector && !xpath) return requireSelectorOrXpath();
 

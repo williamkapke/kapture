@@ -186,7 +186,10 @@ Then ask Claude to interact with web pages:
 - `reload` - Reload the current page (similar to pressing F5)
 - `click` - Click elements (uses first matching element, returns unique selector)
 - `hover` - Hover over elements (uses first matching element, returns unique selector)
-- `fill` - Fill input fields (uses first matching element, returns unique selector)
+- `fill` - Fill input fields by setting value directly (uses first matching element, returns unique selector)
+- `type` - Type a string as individual keystrokes (real key events; works on "fake" inputs that ignore element.value)
+- `insertText` - Insert a whole string at once (fires input events but no per-key events; good for bulk text and editors like Google Docs)
+- `clear` - Clear a text field via select-all + Backspace (real key events; works on "fake" inputs)
 - `select` - Select dropdown options (HTML `<select>` only, uses first matching element, returns unique selector)
 - `keypress` - Send keyboard events to the page or specific elements (supports modifier keys)
 - `scroll` - Scroll an element into view (selector/xpath) or to an absolute x/y document coordinate
@@ -195,7 +198,7 @@ Then ask Claude to interact with web pages:
 - `watch_console` - Watch the console in real time for a required timeout (ms), then return everything logged during the window
 - `evaluate` - Execute JavaScript in the page and return the result. Off by default: only available after enabling the "Allow JS execution" toggle in the extension popup or DevTools panel for a connected tab. The grant resets on disconnect.
 
-**Note on Selectors**: Tools that accept a `selector` parameter (`click`, `hover`, `fill`, `select`, `keypress`, `scroll`, `screenshot`, `dom`) will only operate on the **first element** that matches the CSS selector. The tool response includes the unique selector of the actual element that was used, which may include an auto-generated ID if the element didn't have one.
+**Note on Selectors**: Tools that accept a `selector` parameter (`click`, `hover`, `fill`, `type`, `insertText`, `clear`, `select`, `keypress`, `scroll`, `screenshot`, `dom`) will only operate on the **first element** that matches the CSS selector. The tool response includes the unique selector of the actual element that was used, which may include an auto-generated ID if the element didn't have one.
 
 **XPath Support**: All tools that accept a `selector` parameter also accept an `xpath` parameter as an alternative. This is particularly useful for:
 - Finding elements by text content: `xpath: "//button[contains(text(), 'Submit')]"`

@@ -64,6 +64,16 @@ export class ToolHandler {
           }
           result = await this.commandHandler.callTool(name, validatedArgs);
           break;
+        case 'type':
+          // Scale the timeout to the text length and per-key delay so long
+          // strings don't trip the default 5s command timeout.
+          if (!validatedArgs.timeout) {
+            const len = (validatedArgs.text || '').length;
+            const delay = validatedArgs.delay || 0;
+            validatedArgs.timeout = Math.min(120000, Math.max(5000, len * (delay + 15) + 2000));
+          }
+          result = await this.commandHandler.callTool(name, validatedArgs);
+          break;
         default:
           // All other tools go through the generic callTool method
           result = await this.commandHandler.callTool(name, validatedArgs);

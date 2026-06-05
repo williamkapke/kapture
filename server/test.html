@@ -303,6 +303,43 @@
 
         </div>
 
+        <!-- Text Entry Tests - Full Width -->
+        <div class="test-section">
+            <h3>Text Entry Tests</h3>
+
+            <div style="margin: 10px 0;">
+                <label for="contenteditable-input">Contenteditable (ignores .value):</label>
+                <div id="contenteditable-input" contenteditable="true"
+                     style="border: 1px solid #ccc; padding: 8px; min-height: 24px; border-radius: 4px; background: #fff;"></div>
+            </div>
+
+            <div style="margin: 10px 0;">
+                <label for="keylog-input">Key-logging input:</label>
+                <!-- type=search (not text) so it doesn't affect input[type=text] queries -->
+                <input type="search" id="keylog-input" placeholder="counts keydowns"
+                       style="width: 100%; box-sizing: border-box;">
+            </div>
+
+            <div style="margin: 10px 0;">
+                <label for="keydown-count">Keydown count (updated by real key events only):</label>
+                <input type="search" id="keydown-count" value="0" readonly
+                       style="width: 100%; box-sizing: border-box; background: #eee;">
+            </div>
+
+            <script>
+                // The keydown counter only advances on genuine key events, so a
+                // type call (real keystrokes) bumps it once per character while
+                // fill (which just sets .value) leaves it at 0.
+                (function () {
+                    const keylog = document.getElementById('keylog-input');
+                    const counter = document.getElementById('keydown-count');
+                    keylog.addEventListener('keydown', () => {
+                        counter.value = String((parseInt(counter.value) || 0) + 1);
+                    });
+                })();
+            </script>
+        </div>
+
         <!-- Scrollable Area - Full Width -->
         <div class="test-section">
             <h3>Scrollable Area</h3>

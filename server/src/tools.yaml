@@ -166,9 +166,69 @@ tools:
         minimum: 1000
         maximum: 70000
 
+  type:
+    description: >-
+      Type a string as individual keystrokes (real keydown/keyup/input events
+      per character) via Chrome DevTools Protocol. Unlike `fill`, this works on
+      "fake" inputs and rich editors that ignore element.value and react to
+      actual keypresses (autocomplete, input masks, contenteditable). Optionally
+      focuses a target element first (CSS selector or XPath); otherwise types
+      into the currently focused element. Types at the cursor (does not clear -
+      use the `clear` tool first to replace existing content).
+    required: [tabId, text]
+    properties:
+      tabId: *tabId
+      text:
+        type: string
+        description: The text to type, character by character
+      <<: *selectorAndXpath
+      delay:
+        type: number
+        description: >-
+          Delay in milliseconds between each keystroke. Default 0. Increase for
+          sites that debounce or throttle input.
+        default: 0
+        minimum: 0
+        maximum: 5000
+      timeout:
+        type: number
+        description: >-
+          Command timeout in milliseconds. Auto-extended based on text length
+          and delay when not specified.
+        minimum: 1000
+        maximum: 120000
+
+  insertText:
+    description: >-
+      Insert a whole string at once into the focused element via Chrome DevTools
+      Protocol (like an IME commit or paste - fires input/beforeinput but no
+      per-key events). Best for large blocks of text and editors that accept
+      inserted text (e.g. Google Docs). For inputs that require real keystrokes,
+      use `type` instead. Optionally focuses a target element first (CSS selector
+      or XPath); otherwise inserts at the currently focused element's cursor.
+    required: [tabId, text]
+    properties:
+      tabId: *tabId
+      text:
+        type: string
+        description: The text to insert
+      <<: *selectorAndXpath
+
+  clear:
+    description: >-
+      Clear a text field by selecting all of its contents and deleting them with
+      real key events (Ctrl/Cmd+A then Backspace) via Chrome DevTools Protocol.
+      Works on inputs, textareas, contenteditable, and "fake" inputs that ignore
+      element.value. Optionally focuses a target element first (CSS selector or
+      XPath); otherwise clears the currently focused element.
+    required: [tabId]
+    properties:
+      tabId: *tabId
+      <<: *selectorAndXpath
+
   screenshot:
     description: >-
-      Capture a screenshot of the page or specific element using CSS selector 
+      Capture a screenshot of the page or specific element using CSS selector
       or XPath. When a selector/xpath is provided, only the first matching 
       element will be captured. Returns the unique selector of the captured 
       element if applicable.
