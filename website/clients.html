@@ -375,28 +375,14 @@
 
     async function loadHome() {
       clearTimeout(refreshTimer);
+
+      // The two sections load independently: /tabs exists on every server
+      // version and drives the offline banner; /clients may 404 on older
+      // servers and must not take the tabs list down with it.
       try {
-        const clients = await api('GET', '/clients') || [];
+        const tabs = await api('GET', '/tabs') || [];
         byId('offline-banner').style.display = 'none';
         refreshDelay = REFRESH_INTERVAL;
-        const clientsKey = JSON.stringify(clients.map(c =>
-          [c.id, c.type, c.clientInfo?.name, c.clientInfo?.version, c.initialized]));
-        if (clientsKey !== renderedClientsKey) {
-          renderedClientsKey = clientsKey;
-          document.querySelector('#clients-table tbody').replaceChildren(...clients.map(c =>
-            el('tr', {}, [
-              el('td', { className: 'mono', textContent: c.id }),
-              el('td', { textContent: c.type || '' }),
-              el('td', { textContent: c.clientInfo?.name || '—' }),
-              el('td', { textContent: c.clientInfo?.version || '—' }),
-              el('td', { textContent: c.initialized ? 'yes' : 'no' })
-            ])
-          ));
-          show(byId('clients-table'), clients.length > 0);
-          show(byId('clients-empty'), clients.length === 0);
-        }
-
-        const tabs = await api('GET', '/tabs') || [];
         const tabsKey = JSON.stringify(tabs.map(tab =>
           [tab.tabId, tab.title, tab.url, tab.browser, tab.connectedAt]));
         if (tabsKey !== renderedTabsKey) {
@@ -418,6 +404,34 @@
         // Back off while the server is unreachable
         refreshDelay = Math.min(refreshDelay * 2, REFRESH_MAX);
       }
+
+      try {
+        const clients = await api('GET', '/clients') || [];
+        const clientsKey = JSON.stringify(clients.map(c =>
+          [c.id, c.type, c.clientInfo?.name, c.clientInfo?.version, c.initialized]));
+        if (clientsKey !== renderedClientsKey) {
+          renderedClientsKey = clientsKey;
+          document.querySelector('#clients-table tbody').replaceChildren(...clients.map(c =>
+            el('tr', {}, [
+              el('td', { className: 'mono', textContent: c.id }),
+              el('td', { textContent: c.type || '' }),
+              el('td', { textContent: c.clientInfo?.name || '—' }),
+              el('td', { textContent: c.clientInfo?.version || '—' }),
+              el('td', { textContent: c.initialized ? 'yes' : 'no' })
+            ])
+          ));
+          byId('clients-empty').textContent = 'No MCP clients connected.';
+          show(byId('clients-table'), clients.length > 0);
+          show(byId('clients-empty'), clients.length === 0);
+        }
+      } catch {
+        // Older servers don't have /clients
+        renderedClientsKey = null;
+        show(byId('clients-table'), false);
+        byId('clients-empty').textContent = 'Not available on this server version - update kapture-mcp to see connected MCP clients.';
+        show(byId('clients-empty'), true);
+      }
+
       scheduleRefresh();
     }
 
