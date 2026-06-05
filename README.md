@@ -192,6 +192,7 @@ Then ask Claude to interact with web pages:
 - `elements` - Query all elements matching a CSS selector or XPath with optional visibility filtering
 - `console_logs` - Get the tab's console contents (console messages, uncaught exceptions, browser-generated entries)
 - `watch_console` - Watch the console in real time for a required timeout (ms), then return everything logged during the window
+- `evaluate` - Execute JavaScript in the page and return the result. Off by default: only available after enabling the "Allow JS execution" toggle in the extension popup or DevTools panel for a connected tab. The grant resets on disconnect.
 
 **Note on Selectors**: Tools that accept a `selector` parameter (`click`, `hover`, `fill`, `select`, `keypress`, `screenshot`, `dom`) will only operate on the **first element** that matches the CSS selector. The tool response includes the unique selector of the actual element that was used, which may include an auto-generated ID if the element didn't have one.
 

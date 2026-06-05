@@ -9,6 +9,12 @@
       width: 180px;
       background-color: #202124;
       display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .row {
+      display: flex;
       align-items: center;
       gap: 12px;
     }
@@ -114,17 +120,56 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+
+    /* "Allow JavaScript Execution" row */
+    #eval-row {
+      display: flex;
+    }
+
+    .eval-label {
+      color: #9aa0a6;
+      font-size: 12px;
+      font-weight: 500;
+      flex: 1;
+    }
+
+    .eval-label.enabled {
+      color: #f28b82;
+    }
+
+    /* Disabled (tab not connected) */
+    #eval-row.disabled {
+      opacity: 0.4;
+    }
+
+    #eval-row.disabled .toggle-track {
+      cursor: not-allowed;
+    }
+
+    /* Danger styling - red when enabled */
+    .toggle-input:checked + .toggle-track.danger {
+      background-color: #f28b82;
+    }
   </style>
 </head>
 <body>
-  <div class="status disconnected" id="status">
-    <span class="spinner"></span>
-    <span class="status-text">Disconnected</span>
+  <div class="row">
+    <div class="status disconnected" id="status">
+      <span class="spinner"></span>
+      <span class="status-text">Disconnected</span>
+    </div>
+    <label class="toggle-container">
+      <input type="checkbox" class="toggle-input" id="toggle">
+      <span class="toggle-track"></span>
+    </label>
   </div>
-  <label class="toggle-container">
-    <input type="checkbox" class="toggle-input" id="toggle">
-    <span class="toggle-track"></span>
-  </label>
+  <div class="row" id="eval-row">
+    <span class="eval-label" id="eval-label" title="Allow the connected MCP client to execute arbitrary JavaScript in this tab. Resets on disconnect.">Allow JS execution</span>
+    <label class="toggle-container">
+      <input type="checkbox" class="toggle-input" id="eval-toggle">
+      <span class="toggle-track danger"></span>
+    </label>
+  </div>
   <script src="popup.js"></script>
 </body>
 </html>

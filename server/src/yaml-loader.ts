@@ -235,8 +235,8 @@ export const listTabsTool = convertedTools.list_tabsTool;
 export const tabDetailTool = convertedTools.tab_detailTool;
 export const consoleLogsTool = convertedTools.console_logsTool;
 
-// Export all tools array - dynamically from convertedTools, excluding evaluate
-export const allTools = Object.values(convertedTools).filter(tool => tool && tool.name && tool.name !== 'evaluate');
+// Export all tools array - dynamically from convertedTools
+export const allTools = Object.values(convertedTools).filter(tool => tool && tool.name);
 
 // Export resources
 export const baseResources = resourcesConfig.baseResources;

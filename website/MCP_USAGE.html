@@ -450,7 +450,7 @@ graph LR
 
         <h2 id="available-tools">Available Tools</h2>
 
-        <p>Kapture provides 22 tools organized into functional categories:</p>
+        <p>Kapture provides 23 tools organized into functional categories:</p>
 
         <h3>Navigation Tools</h3>
 
@@ -660,6 +660,24 @@ graph LR
                 <p>Close a browser tab.</p>
                 <pre><code>{
   tabId: "tab_1234567890"
+}</code></pre>
+            </div>
+        </div>
+
+        <h3>JavaScript Execution</h3>
+
+        <div class="warning">
+            <p><strong>Gated tool:</strong> <code>evaluate</code> is off by default. It is hidden from <code>tools/list</code> (and calls are rejected) until the user turns on the "Allow JS execution" toggle in the Kapture extension popup or DevTools panel for a connected tab. The grant is in-memory only and resets whenever the tab disconnects. When availability changes, the server sends <code>notifications/tools/list_changed</code>.</p>
+        </div>
+
+        <div class="tool-grid">
+            <div class="tool-card">
+                <h4>evaluate</h4>
+                <p>Execute JavaScript in the page's main world and return the result. Promises are awaited; the result must be JSON-serializable. Prefer the purpose-built tools — use evaluate only when no other tool can accomplish the task.</p>
+                <pre><code>{
+  tabId: "tab_1234567890",
+  code: "document.title",
+  timeout: 5000  // optional, 1000-60000 ms
 }</code></pre>
             </div>
         </div>

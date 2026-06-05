@@ -81,6 +81,29 @@ export class BrowserCommandHandler {
       });
     }
 
+    if (toolName === 'evaluate') {
+      // Per-tab gate: the user must have enabled "Allow JavaScript Execution"
+      // for this tab in the extension UI. (The extension enforces this too.)
+      const tab = this.tabRegistry.get(args.tabId);
+      if (tab && !tab.evalAllowed) {
+        return {
+          success: false,
+          error: {
+            code: 'EVAL_NOT_ALLOWED',
+            message: 'JavaScript execution is not enabled for this tab. The user must turn on "Allow JavaScript Execution" in the Kapture extension popup or DevTools panel.'
+          }
+        };
+      }
+
+      // The extension evaluates with `evalTimeout`; pad the server-side wait
+      // so the extension's timeout error wins over a generic command timeout.
+      return this.executeCommand('evaluate', {
+        ...args,
+        evalTimeout: args.timeout,
+        timeout: args.timeout + 2000
+      });
+    }
+
     // Map tool names to command names (most are the same)
     const commandMap: { [key: string]: string } = {
       'console_logs': 'getLogs'

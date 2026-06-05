@@ -12,7 +12,11 @@ export class ToolHandler {
 
 
   public getTools() {
-    return allTools.map(tool => ({
+    // The evaluate tool is only advertised when at least one connected tab
+    // has "Allow JavaScript Execution" enabled. Hiding it entirely keeps
+    // agents from reaching for it instead of the purpose-built tools.
+    const evalAvailable = this.tabRegistry.getAll().some(tab => tab.evalAllowed);
+    return allTools.filter(tool => tool.name !== 'evaluate' || evalAvailable).map(tool => ({
       name: tool.name,
       description: tool.description,
       inputSchema: (tool as any).jsonSchema || tool.inputSchema,

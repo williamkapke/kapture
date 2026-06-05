@@ -45,6 +45,38 @@ html, body {
   gap: 12px;
 }
 
+/* "Allow JavaScript Execution" toggle */
+.eval-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  margin-right: 24px;
+}
+
+.eval-toggle.disabled {
+  opacity: 0.4;
+}
+
+.eval-toggle.disabled .toggle-track {
+  cursor: not-allowed;
+}
+
+.eval-label {
+  color: var(--text-secondary, #9aa0a6);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.eval-label.enabled {
+  color: #f28b82;
+}
+
+/* Danger styling - red when enabled */
+.toggle-input:checked + .toggle-track.danger {
+  background-color: #f28b82;
+}
+
 /* Status */
 .status {
   color: var(--text-primary);

@@ -122,6 +122,7 @@ export class BrowserWebSocketManager {
    * - 'register': New tab registration or reconnection
    * - 'response': Command execution results from the browser
    * - 'tab-info': Tab metadata updates (URL, title, dimensions, etc.)
+   * - 'eval-permission': User toggled "Allow JavaScript Execution" for the tab
    * - Unknown types: Sends error response back to extension
    */
   private routeBrowserMessage(ws: WebSocket, message: Message): void {
@@ -155,6 +156,17 @@ export class BrowserWebSocketManager {
             pageVisibility: message.pageVisibility
           });
           logger.log(`Tab ${connection.tabId} info updated: ${message.url}`);
+        }
+        break;
+
+      case 'eval-permission':
+        // User toggled "Allow JavaScript Execution" in the extension UI
+        const evalConnection = this.tabRegistry.findByWebSocket(ws);
+        if (evalConnection) {
+          this.tabRegistry.updateTabInfo(evalConnection.tabId, {
+            evalAllowed: message.allowed === true
+          });
+          logger.log(`Tab ${evalConnection.tabId} eval permission: ${message.allowed === true}`);
         }
         break;
 

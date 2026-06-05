@@ -15,31 +15,41 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   // Listen for state updates
   port.onMessage.addListener((msg) => {
     if (msg.type === 'state' && msg.tabId === tabId) {
-      updateUI(msg.connected, msg.status);
+      updateUI(msg.connected, msg.status, msg.evalAllowed);
     }
   });
-  
+
   // Get initial state
   chrome.runtime.sendMessage({ type: 'getState', tabId }, (state) => {
-    updateUI(state.connected, state.status);
+    updateUI(state.connected, state.status, state.evalAllowed);
   });
 });
 
 // Handle toggle switch
 document.getElementById('toggle').addEventListener('change', (e) => {
   if (isUpdatingUI) return; // Prevent feedback loop
-  
-  if (e.target.checked) {
-    chrome.runtime.sendMessage({ type: 'connect', tabId });
-  } else {
-    chrome.runtime.sendMessage({ type: 'disconnect', tabId });
-  }
+
+  const type = e.target.checked ? 'connect' : 'disconnect';
+  chrome.runtime.sendMessage({ type, tabId }, () => {
+    // Reconcile from authoritative state - a failed connect (e.g. content
+    // script missing after extension reload) must snap the toggle back.
+    chrome.runtime.sendMessage({ type: 'getState', tabId }, (state) => {
+      updateUI(state.connected, state.status, state.evalAllowed);
+    });
+  });
+});
+
+// Handle "Allow JavaScript Execution" toggle
+document.getElementById('eval-toggle').addEventListener('change', (e) => {
+  if (isUpdatingUI) return; // Prevent feedback loop
+
+  chrome.runtime.sendMessage({ type: 'setEvalAllowed', tabId, allowed: e.target.checked });
 });
 
 // Update UI
-function updateUI(connected, status = 'disconnected') {
+function updateUI(connected, status = 'disconnected', evalAllowed = false) {
   isUpdatingUI = true;
-  
+
   const toggle = document.getElementById('toggle');
   const toggleContainer = toggle.parentElement;
   const statusEl = document.getElementById('status');
@@ -75,6 +85,15 @@ function updateUI(connected, status = 'disconnected') {
       statusText.textContent = 'Disconnected';
       break;
   }
-  
+
+  // "Allow JavaScript Execution" row - always visible, disabled until connected
+  const evalRow = document.getElementById('eval-row');
+  const evalToggle = document.getElementById('eval-toggle');
+  const evalLabel = document.getElementById('eval-label');
+  evalRow.classList.toggle('disabled', status !== 'connected');
+  evalToggle.disabled = status !== 'connected';
+  evalToggle.checked = !!evalAllowed;
+  evalLabel.classList.toggle('enabled', !!evalAllowed);
+
   setTimeout(() => { isUpdatingUI = false; }, 100);
 }

@@ -28,7 +28,7 @@ function initializeUI() {
   // Listen for state updates
   port.onMessage.addListener((msg) => {
     if (msg.type === 'state' && msg.tabId === tabId) {
-      updateUI(msg.connected, msg.status);
+      updateUI(msg.connected, msg.status, msg.evalAllowed);
     } else if (msg.type === 'messages' && msg.tabId === tabId) {
       // Update messages from background
       messages = msg.messages || [];
@@ -41,6 +41,7 @@ function initializeUI() {
 
   // Event listeners
   document.getElementById('toggle').addEventListener('change', handleToggleChange);
+  document.getElementById('eval-toggle').addEventListener('change', handleEvalToggleChange);
   document.getElementById('clear-messages').addEventListener('click', handleClearMessages);
   document.getElementById('messages-list').addEventListener('click', handleMessageClick);
   document.addEventListener('keydown', handleKeyDown);
@@ -73,7 +74,7 @@ function initializeKeepaliveSetting() {
 }
 
 // Update UI based on connection state
-function updateUI(connected, status = 'disconnected') {
+function updateUI(connected, status = 'disconnected', evalAllowed = false) {
   const toggle = document.getElementById('toggle');
   const toggleContainer = toggle.parentElement;
   const statusEl = document.getElementById('status');
@@ -113,6 +114,15 @@ function updateUI(connected, status = 'disconnected') {
       tabInfo.textContent = 'Tab: Not connected';
       break;
   }
+
+  // "Allow JavaScript Execution" toggle - always visible, disabled until connected
+  const evalRow = document.getElementById('eval-row');
+  const evalToggle = document.getElementById('eval-toggle');
+  const evalLabel = document.getElementById('eval-label');
+  evalRow.classList.toggle('disabled', status !== 'connected');
+  evalToggle.disabled = status !== 'connected';
+  evalToggle.checked = !!evalAllowed;
+  evalLabel.classList.toggle('enabled', !!evalAllowed);
 }
 
 // Render messages
@@ -261,8 +271,18 @@ function handleToggleChange(e) {
       if (response?.error) {
         console.error('Toggle error:', response.error);
       }
+      // Reconcile from authoritative state - a failed connect (e.g. content
+      // script missing after extension reload) must snap the toggle back.
+      chrome.runtime.sendMessage({ type: 'getState', tabId }, (state) => {
+        if (state) updateUI(state.connected, state.status, state.evalAllowed);
+      });
     }
   );
+}
+
+// Handle "Allow JavaScript Execution" toggle change
+function handleEvalToggleChange(e) {
+  chrome.runtime.sendMessage({ type: 'setEvalAllowed', tabId, allowed: e.target.checked });
 }
 
 // Handle clear messages

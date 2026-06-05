@@ -89,15 +89,45 @@ export class TabManager {
       return { ok: true, message: 'Already connected' };
     }
 
-    // Get tab info from content script
-    const tabInfo = await getTabInfo(tabId);
-    tabState.updatePageMetadata(tabInfo);
+    try {
+      // Get tab info from content script. This fails when the content script
+      // isn't present - most commonly right after the extension is reloaded
+      // (Chrome doesn't re-inject into already-open tabs until they reload).
+      const tabInfo = await getTabInfo(tabId);
+      tabState.updatePageMetadata(tabInfo);
 
-    // Set up connection
-    tabState.connectionInfo.userDisconnected = false;
+      // Set up connection
+      tabState.connectionInfo.userDisconnected = false;
 
-    await this._createConnection(tabState);
+      await this._createConnection(tabState);
 
+      return { ok: true };
+    } catch (error) {
+      // Reconcile UI: without this the popup/panel toggle stays stuck "on"
+      // (green) while actually disconnected, because the caller's optimistic
+      // checkbox flip is never corrected.
+      tabState.evalAllowed = false;
+      tabState.connectionInfo.setDisconnected(true);
+      this.notifyListeners(tabId, 'stateChanged', tabState);
+      return { ok: false, error: error.message };
+    }
+  }
+
+  // "Allow JavaScript Execution" toggle. In-memory only - any disconnect resets it.
+  setEvalAllowed(tabId, allowed) {
+    const tabState = this.getTab(tabId);
+    if (!tabState) {
+      return { ok: false, error: 'Tab not found' };
+    }
+
+    tabState.evalAllowed = !!allowed;
+
+    // Tell the server so it can show/hide the evaluate tool
+    if (tabState.websocket && tabState.websocket.readyState === WebSocket.OPEN) {
+      this.sendMessage(tabId, { type: 'eval-permission', allowed: tabState.evalAllowed });
+    }
+
+    this.notifyListeners(tabId, 'stateChanged', tabState);
     return { ok: true };
   }
 
@@ -107,6 +137,7 @@ export class TabManager {
       return { ok: false, error: 'Tab not found' };
     }
 
+    tabState.evalAllowed = false;
     tabState.connectionInfo.setDisconnected(true);
 
     // Clear keepalive interval
@@ -176,6 +207,10 @@ export class TabManager {
         clearInterval(tabState.keepaliveInterval);
         tabState.keepaliveInterval = null;
       }
+
+      // Any disconnect (user toggle, server restart, tab close) revokes the
+      // "Allow JavaScript Execution" grant - it must be re-enabled manually.
+      tabState.evalAllowed = false;
 
       tabState.clearWebSocket();
 

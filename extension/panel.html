@@ -8,6 +8,13 @@
     <!-- Header -->
     <div class="header">
       <span class="tab-info" id="tab-info">Tab: Not connected</span>
+      <div class="eval-toggle" id="eval-row" title="Allow the connected MCP client to execute arbitrary JavaScript in this tab. Resets on disconnect.">
+        <span class="eval-label" id="eval-label">Allow JS execution</span>
+        <label class="toggle-container">
+          <input type="checkbox" class="toggle-input" id="eval-toggle">
+          <span class="toggle-track danger"></span>
+        </label>
+      </div>
       <div class="connection-toggle">
         <div class="status disconnected" id="status">
           <span class="spinner"></span>

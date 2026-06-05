@@ -273,6 +273,27 @@ tools:
         minimum: 1000
         maximum: 60000
 
+  evaluate:
+    description: >-
+      Execute JavaScript in the page and return the result. The code runs in
+      the page's main world via Chrome DevTools Protocol; the result must be
+      JSON-serializable. Promises are awaited. Only available when the user
+      has enabled "Allow JavaScript Execution" for the tab in the Kapture
+      extension. Prefer the purpose-built tools (click, fill, dom, elements,
+      etc.) - only use evaluate when no other tool can accomplish the task.
+    required: [tabId, code]
+    properties:
+      tabId: *tabId
+      code:
+        type: string
+        description: JavaScript source to evaluate in the page
+      timeout:
+        type: number
+        description: Command timeout in milliseconds
+        default: 5000
+        minimum: 1000
+        maximum: 60000
+
   new_tab:
     description: >-
       Opens a new browser tab with the Kapture MCP usage documentation page. 

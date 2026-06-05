@@ -3,6 +3,7 @@ import { click, hover } from './background-click.js';
 import { navigate, back, forward, close, reload, show } from './background-navigate.js';
 import { screenshot } from './background-screenshot.js';
 import { getLogs, watchConsole } from './background-console.js';
+import { evaluate } from './background-evaluate.js';
 
 export const getFromContentScript = async (tabId, command, params, ) => {
   return await chrome.tabs.sendMessage(tabId, { command, params });
@@ -120,5 +121,6 @@ export const backgroundCommands = {
   keypress,
   screenshot,
   getLogs,
-  watchConsole
+  watchConsole,
+  evaluate
 }

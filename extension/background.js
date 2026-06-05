@@ -165,6 +165,12 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       sendResponse(tabState ? tabState.getConnectionState() : { connected: false, status: 'disconnected' });
       return false;
     }
+
+    if (request.type === 'setEvalAllowed' && request.tabId) {
+      const result = tabManager.setEvalAllowed(request.tabId, request.allowed);
+      sendResponse(result);
+      return false;
+    }
   }
 });
 

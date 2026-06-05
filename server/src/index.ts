@@ -72,9 +72,11 @@ const mcpServerManager = new MCPServerManager(
 // ========================================================================
 
 // Tab-scoped commands exposed over HTTP as POST /tab/{tabId}/{command}
+// (evaluate is gated per-tab by the "Allow JavaScript Execution" toggle,
+// enforced in BrowserCommandHandler and in the extension)
 const HTTP_TAB_COMMANDS = new Set([
   'navigate', 'back', 'forward', 'reload', 'show',
-  'click', 'hover', 'focus', 'blur', 'fill', 'select', 'keypress'
+  'click', 'hover', 'focus', 'blur', 'fill', 'select', 'keypress', 'evaluate'
 ]);
 
 function readJsonBody(req: import('http').IncomingMessage): Promise<any> {

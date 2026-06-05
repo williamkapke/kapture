@@ -59,6 +59,7 @@ interface MCPConnection {
 export class MCPServerManager {
   private connections: Map<string, MCPConnection> = new Map();
   private dynamicTabResources: Map<string, any> = new Map();
+  private evalAvailable = false;
 
   constructor(
     private browserWebSocketManager: BrowserWebSocketManager,
@@ -89,6 +90,7 @@ export class MCPServerManager {
       });
 
       await this.sendTabListChangeNotification();
+      await this.checkEvalAvailability();
     });
 
     // Tab update callback
@@ -110,6 +112,7 @@ export class MCPServerManager {
       }
 
       await this.sendTabListChangeNotification();
+      await this.checkEvalAvailability();
     });
 
     // Tab disconnect callback
@@ -139,6 +142,7 @@ export class MCPServerManager {
       });
 
       await this.sendTabListChangeNotification();
+      await this.checkEvalAvailability();
     });
   }
 
@@ -148,6 +152,21 @@ export class MCPServerManager {
     // Add all resources for this tab
     for (const [key, resource] of tabResources) {
       this.dynamicTabResources.set(key, resource);
+    }
+  }
+
+  // The evaluate tool appears in tools/list only when at least one connected
+  // tab allows it. When that availability flips, tell clients to re-fetch.
+  private async checkEvalAvailability(): Promise<void> {
+    const available = this.tabRegistry.getAll().some(tab => tab.evalAllowed);
+    if (available !== this.evalAvailable) {
+      this.evalAvailable = available;
+      await this.notifyAllConnections(async (connection) => {
+        await connection.server.notification({
+          method: 'notifications/tools/list_changed',
+          params: {}
+        });
+      });
     }
   }
 
@@ -197,7 +216,7 @@ export class MCPServerManager {
       SERVER_INFO,
       {
         capabilities: {
-          tools: {},
+          tools: { listChanged: true },
           resources: {},
         },
       }
@@ -224,7 +243,7 @@ export class MCPServerManager {
         // hardcoded mismatch and crash-loop.
         protocolVersion: request.params.protocolVersion,
         capabilities: {
-          tools: {},
+          tools: { listChanged: true },
           resources: {}
         },
         serverInfo: SERVER_INFO

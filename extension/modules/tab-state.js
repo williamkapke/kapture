@@ -53,6 +53,7 @@ export class TabState {
     this.ports = new Set(); // Connected DevTools panels/popups
     this.pageMetadata = {};
     this.mousePosition = { x: 0, y: 0 }; // Track current mouse position
+    this.evalAllowed = false; // "Allow JavaScript Execution" toggle - in-memory only, resets on disconnect
   }
 
   // WebSocket management
@@ -108,7 +109,8 @@ export class TabState {
       connected: this.connectionInfo.connected,
       status: this.connectionInfo.status,
       reconnectAttempt: this.connectionInfo.reconnectAttempts,
-      nextRetryIn: this.connectionInfo.nextRetryIn
+      nextRetryIn: this.connectionInfo.nextRetryIn,
+      evalAllowed: this.evalAllowed
     };
   }
 

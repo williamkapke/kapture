@@ -16,6 +16,9 @@ export function formatTabDetail(tab: TabConnection): any {
     fullPageDimensions: tab.fullPageDimensions,
     viewportDimensions: tab.viewportDimensions,
     scrollPosition: tab.scrollPosition,
-    pageVisibility: tab.pageVisibility
+    pageVisibility: tab.pageVisibility,
+    // Only surfaced when enabled - absent otherwise so the gated evaluate
+    // tool isn't advertised to agents that can't use it
+    evalAllowed: tab.evalAllowed === true ? true : undefined
   };
 }
