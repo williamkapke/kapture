@@ -16,13 +16,6 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["console-listener.js"],
-      "run_at": "document_start",
-      "all_frames": false,
-      "world": "MAIN"
-    },
-    {
-      "matches": ["<all_urls>"],
       "js": ["page-helpers.js", "content-script.js"],
       "run_at": "document_start",
       "all_frames": false

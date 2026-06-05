@@ -18,16 +18,3 @@ export class Message {
   }
 }
 
-// Console log entry class
-export class ConsoleLogEntry {
-  constructor(level, args, stackTrace = null) {
-    this.id = crypto.randomUUID();
-    this.level = level; // 'log' | 'info' | 'warn' | 'error'
-    this.args = args;
-    if (stackTrace) {
-      this.stackTrace = stackTrace;
-    }
-    this.timestamp = new Date();
-  }
-}
-

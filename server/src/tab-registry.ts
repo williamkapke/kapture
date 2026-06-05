@@ -7,6 +7,7 @@ export interface TabConnection {
   url?: string;
   title?: string;
   browser?: string;
+  version?: string;  // Extension version (absent on older extensions)
   connectedAt: number;
   lastPing?: number;
   domSize?: number;
@@ -92,6 +93,7 @@ export class TabRegistry {
     url?: string;
     title?: string;
     browser?: string;
+    version?: string;
     domSize?: number;
     fullPageDimensions?: { width: number; height: number };
     viewportDimensions?: { width: number; height: number };
@@ -112,6 +114,7 @@ export class TabRegistry {
       if (info.url !== undefined) connection.url = info.url;
       if (info.title !== undefined) connection.title = info.title;
       if (info.browser !== undefined) connection.browser = info.browser;
+      if (info.version !== undefined) connection.version = info.version;
       if (info.domSize !== undefined) connection.domSize = info.domSize;
       if (info.fullPageDimensions !== undefined) connection.fullPageDimensions = info.fullPageDimensions;
       if (info.viewportDimensions !== undefined) connection.viewportDimensions = info.viewportDimensions;

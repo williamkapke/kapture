@@ -13,6 +13,7 @@ interface RegisterMessage extends Message {
   url?: string;
   title?: string;
   browser?: string;
+  version?: string;  // Extension version (absent on older extensions)
   domSize?: number;
   fullPageDimensions?: { width: number; height: number };
   viewportDimensions?: { width: number; height: number };
@@ -31,7 +32,6 @@ interface ResponseMessage extends Message {
 
 export class BrowserWebSocketManager {
   private responseHandler?: (response: ResponseMessage) => void;
-  private consoleLogHandler?: (tabId: string, logEntry: any) => void;
   private mcpClientInfo: { name?: string; version?: string } = {};
 
   constructor(
@@ -44,10 +44,6 @@ export class BrowserWebSocketManager {
 
   setResponseHandler(handler: (response: ResponseMessage) => void): void {
     this.responseHandler = handler;
-  }
-
-  setConsoleLogHandler(handler: (tabId: string, logEntry: any) => void): void {
-    this.consoleLogHandler = handler;
   }
 
   setMcpClientInfo(info: { name?: string; version?: string }): void {
@@ -126,8 +122,6 @@ export class BrowserWebSocketManager {
    * - 'register': New tab registration or reconnection
    * - 'response': Command execution results from the browser
    * - 'tab-info': Tab metadata updates (URL, title, dimensions, etc.)
-   * - 'console': Browser console log entries
-   * - 'console-clear': Console clear events
    * - Unknown types: Sends error response back to extension
    */
   private routeBrowserMessage(ws: WebSocket, message: Message): void {
@@ -164,34 +158,6 @@ export class BrowserWebSocketManager {
         }
         break;
 
-      case 'console-log':
-        // Handle console log updates - forward to MCP notification handler
-        const logConnection = this.tabRegistry.findByWebSocket(ws);
-        if (logConnection && message.logEntry) {
-          logger.log(`Console log received for tab ${logConnection.tabId}: ${message.logEntry.level}`);
-          // Notify MCP handler about the console log
-          if (this.consoleLogHandler) {
-            this.consoleLogHandler(logConnection.tabId, message.logEntry);
-          }
-        }
-        break;
-
-      case 'console-clear':
-        // Handle console clear
-        const clearConnection = this.tabRegistry.findByWebSocket(ws);
-        if (clearConnection) {
-          logger.log(`Console clear received for tab ${clearConnection.tabId}`);
-          // Notify MCP handler about console clear with a special log entry
-          if (this.consoleLogHandler) {
-            this.consoleLogHandler(clearConnection.tabId, {
-              timestamp: new Date().toISOString(),
-              level: 'clear',
-              message: '[Console cleared]'
-            });
-          }
-        }
-        break;
-
       case 'ping':
         // Handle keepalive ping from extension - just send pong back
         ws.send(JSON.stringify({
@@ -222,7 +188,7 @@ export class BrowserWebSocketManager {
    * 5. Triggers connect/update callbacks for notifications
    */
   private handleTabRegistration(ws: WebSocket, message: RegisterMessage): void {
-    const { requestedTabId, url, title, browser, domSize, fullPageDimensions, viewportDimensions,
+    const { requestedTabId, url, title, browser, version, domSize, fullPageDimensions, viewportDimensions,
             scrollPosition, pageVisibility } = message;
 
     // Tab ID is required - extension must provide its Chrome tab ID
@@ -254,12 +220,13 @@ export class BrowserWebSocketManager {
     this.tabRegistry.registerWithoutCallback(tabId, ws);
 
     // Update tab info if provided
-    if (url || title || browser || domSize || fullPageDimensions || viewportDimensions ||
+    if (url || title || browser || version || domSize || fullPageDimensions || viewportDimensions ||
         scrollPosition || pageVisibility) {
       this.tabRegistry.updateTabInfo(tabId, {
         url,
         title,
         browser,
+        version,
         domSize,
         fullPageDimensions,
         viewportDimensions,

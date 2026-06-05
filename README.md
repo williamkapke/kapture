@@ -190,6 +190,8 @@ Then ask Claude to interact with web pages:
 - `select` - Select dropdown options (HTML `<select>` only, uses first matching element, returns unique selector)
 - `keypress` - Send keyboard events to the page or specific elements (supports modifier keys)
 - `elements` - Query all elements matching a CSS selector or XPath with optional visibility filtering
+- `console_logs` - Get the tab's console contents (console messages, uncaught exceptions, browser-generated entries)
+- `watch_console` - Watch the console in real time for a required timeout (ms), then return everything logged during the window
 
 **Note on Selectors**: Tools that accept a `selector` parameter (`click`, `hover`, `fill`, `select`, `keypress`, `screenshot`, `dom`) will only operate on the **first element** that matches the CSS selector. The tool response includes the unique selector of the actual element that was used, which may include an auto-generated ID if the element didn't have one.
 
@@ -276,16 +278,15 @@ After making changes:
 **Extension** (`/extension`):
 - `background.js` + `modules/` - Service worker: owns WebSocket connections and executes commands (via `chrome.debugger` and `chrome.tabs` APIs)
 - `page-helpers.js` - Content script handling DOM commands (`dom`, `elements`, `fill`, `select`, ...)
-- `console-listener.js` - Content script capturing console logs
+- `modules/background-console.js` - Console retrieval via CDP (reads Chrome's per-page console buffer; no extension-side log storage)
 - `popup.js` - Toolbar popup with connection toggle
-- `panel.js` - DevTools panel (connection toggle, WebSocket message viewer, console log count)
+- `panel.js` - DevTools panel (connection toggle, WebSocket message viewer)
 
 ## DevTools Panel Features
 
 - **Connection Toggle** - Connect/disconnect the inspected tab
 - **Connection Status** - Real-time server connection indicator
 - **Message Viewer** - Live view of WebSocket messages between extension and server
-- **Console Count** - Number of captured console log entries
 - **Keepalive Setting** - Configurable ping interval
 
 The panel is optional — connections and commands are handled by the background service worker, so automation works with DevTools closed.

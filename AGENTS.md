@@ -4,7 +4,7 @@ This document provides a high-level overview of the Kapture project, intended to
 
 ## Project Goal
 
-Kapture is a Chrome Extension that enables browser automation through the Model Context Protocol (MCP). AI applications (Claude Desktop, Cline, etc.) connect to a local MCP server, which relays commands over WebSocket to the extension, which executes them in the browser (navigate, click, fill, screenshot, read DOM, capture console logs, etc.).
+Kapture is a Chrome Extension that enables browser automation through the Model Context Protocol (MCP). AI applications (Claude Desktop, Cline, etc.) connect to a local MCP server, which relays commands over WebSocket to the extension, which executes them in the browser (navigate, click, fill, screenshot, read DOM, read console logs, etc.).
 
 DevTools does NOT need to be open: the extension's background service worker owns the WebSocket connections and executes commands via `chrome.debugger` (CDP) and content scripts.
 
@@ -14,7 +14,7 @@ DevTools does NOT need to be open: the extension's background service worker own
     *   `manifest.json`: Permissions: `activeTab`, `debugger`, `storage`; host permissions: `<all_urls>`.
     *   `background.js` + `modules/`: Service worker — owns one WebSocket per connected tab (to `ws://127.0.0.1:61822`), dispatches commands. Input/navigation/screenshot commands use `chrome.debugger`; DOM commands are forwarded to the content script.
     *   `page-helpers.js`: Content script (isolated world) handling DOM commands (`dom`, `elements`, `fill`, `select`, `focus`, `blur`, ...).
-    *   `console-listener.js`: Content script (MAIN world) capturing console logs.
+    *   `modules/background-console.js`: Console retrieval via CDP — reads Chrome's per-page console buffer on demand (`console_logs`) or watches live for a duration (`watch_console`); no extension-side log storage.
     *   `popup.js` / `popup.html`: Toolbar popup with the connection toggle.
     *   `panel.js` / `panel.html`: Optional DevTools panel (connection toggle, message viewer).
 *   **`/server`**: TypeScript/Node.js MCP server on port 61822. MCP clients connect via WebSocket at `ws://localhost:61822/mcp` or via stdio using the `kapture-mcp bridge` command. Tools are defined in `src/tools.yaml`.

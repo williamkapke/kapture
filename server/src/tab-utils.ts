@@ -9,6 +9,7 @@ export function formatTabDetail(tab: TabConnection): any {
     url: tab.url,
     title: tab.title,
     browser: tab.browser,
+    version: tab.version,
     connectedAt: tab.connectedAt,
     lastPing: tab.lastPing,
     domSize: tab.domSize,

@@ -160,6 +160,7 @@ export class TabManager {
         type: 'register',
         requestedTabId: tabState.tabId.toString(), // Chrome tab ID
         browser: detectBrowser(), // Add browser type
+        version: chrome.runtime.getManifest().version, // Extension version
         ...tabState.pageMetadata
       };
 
@@ -300,23 +301,6 @@ export class TabManager {
     }
   }
 
-  // Console log management
-  addConsoleLog(tabId, log) {
-    const tabState = this.getTab(tabId);
-    if (tabState) {
-      tabState.addConsoleLog(log);
-      this.notifyListeners(tabId, 'consoleLogAdded', tabState, log);
-    }
-  }
-
-  clearConsoleLogs(tabId) {
-    const tabState = this.getTab(tabId);
-    if (tabState) {
-      tabState.clearConsoleLogs();
-      this.notifyListeners(tabId, 'consoleLogsCleared', tabState);
-    }
-  }
-
   // Port management
   addPort(tabId, port) {
     const tabState = this.getOrCreateTab(tabId);
@@ -334,13 +318,6 @@ export class TabManager {
       type: 'messages',
       tabId,
       messages: tabState.getMessages()
-    });
-
-    // Send console count
-    port.postMessage({
-      type: 'consoleCount',
-      tabId,
-      count: tabState.getConsoleLogCount()
     });
   }
 

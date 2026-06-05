@@ -235,7 +235,11 @@ tools:
         description: Y coordinate relative to the viewport
 
   console_logs:
-    description: Get console logs from a browser tab
+    description: >-
+      Get the browser tab's console contents - what you would see in the
+      DevTools console, including console messages, uncaught exceptions, and
+      browser-generated entries (network errors, violations, etc.). Returns
+      newest first.
     required: [tabId]
     properties:
       tabId: *tabId
@@ -252,6 +256,22 @@ tools:
         type: string
         description: Filter logs by level (log, info, warn, error, debug, trace, table, group, groupCollapsed, groupEnd)
         enum: ["log", "info", "warn", "error", "debug", "trace", "table", "group", "groupCollapsed", "groupEnd"]
+
+  watch_console:
+    description: >-
+      Watch a browser tab's console in real time. Collects console messages,
+      uncaught exceptions, and browser-generated entries as they happen for
+      the timeout duration, then returns them in chronological order. Useful
+      for observing the result of an action (e.g. click something, then watch
+      what the page logs).
+    required: [tabId, timeout]
+    properties:
+      tabId: *tabId
+      timeout:
+        type: number
+        description: How long to watch, in milliseconds
+        minimum: 1000
+        maximum: 60000
 
   new_tab:
     description: >-

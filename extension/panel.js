@@ -18,7 +18,6 @@ console.log('inspectedWindow.url:', chrome.devtools.inspectedWindow.url);
 const tabId = chrome.devtools.inspectedWindow.tabId;
 let selectedMessageIndex = -1;
 let messages = [];
-let consoleLogCount = 0;
 let port = null;
 
 // Initialize UI
@@ -34,10 +33,6 @@ function initializeUI() {
       // Update messages from background
       messages = msg.messages || [];
       renderMessages();
-    } else if (msg.type === 'consoleCount' && msg.tabId === tabId) {
-      // Update console count from background
-      consoleLogCount = msg.count || 0;
-      updateConsoleCount();
     }
   });
 
@@ -46,7 +41,6 @@ function initializeUI() {
 
   // Event listeners
   document.getElementById('toggle').addEventListener('change', handleToggleChange);
-  document.getElementById('clear-logs').addEventListener('click', handleClearLogs);
   document.getElementById('clear-messages').addEventListener('click', handleClearMessages);
   document.getElementById('messages-list').addEventListener('click', handleMessageClick);
   document.addEventListener('keydown', handleKeyDown);
@@ -271,12 +265,6 @@ function handleToggleChange(e) {
   );
 }
 
-// Handle clear logs
-function handleClearLogs() {
-  // Request background to clear console logs
-  port.postMessage({ type: 'clearConsoleLogs', tabId });
-}
-
 // Handle clear messages
 function handleClearMessages() {
   // Request background to clear messages
@@ -286,11 +274,6 @@ function handleClearMessages() {
   const detailContainer = document.getElementById('detail-container');
   detailContainer.classList.remove('visible');
   selectedMessageIndex = -1;
-}
-
-// Update console count
-function updateConsoleCount() {
-  document.getElementById('console-count').textContent = `Console: ${consoleLogCount}`;
 }
 
 // Initialize resize handle

@@ -450,7 +450,7 @@ graph LR
 
         <h2 id="available-tools">Available Tools</h2>
 
-        <p>Kapture provides 20 tools organized into functional categories:</p>
+        <p>Kapture provides 22 tools organized into functional categories:</p>
 
         <h3>Navigation Tools</h3>
 
@@ -600,12 +600,21 @@ graph LR
 
             <div class="tool-card">
                 <h4>console_logs</h4>
-                <p>Retrieve browser console output.</p>
+                <p>Get the tab's console contents — what you'd see in the DevTools console, including console messages, uncaught exceptions, and browser-generated entries. Newest first.</p>
                 <pre><code>{
   tabId: "tab_1234567890",
   level: "error",  // optional
   limit: 100,  // optional
   before: "2024-01-01T00:00:00Z"
+}</code></pre>
+            </div>
+
+            <div class="tool-card">
+                <h4>watch_console</h4>
+                <p>Watch the console in real time. Collects everything logged during the timeout window, then returns it in chronological order. Great for observing the result of an action.</p>
+                <pre><code>{
+  tabId: "tab_1234567890",
+  timeout: 30000  // required, 1000-60000 ms
 }</code></pre>
             </div>
 
@@ -831,15 +840,10 @@ async function capturePageSections(tabId) {
 }</code></pre>
 
         <h3>Console Monitoring</h3>
-        <pre><code>// Monitor for errors during automation
+        <pre><code>// Check for errors after automation
 async function runWithErrorMonitoring(tabId, automation) {
-  // Clear existing logs
-  await callTool('console_logs', { tabId, limit: 1 });
-
-  // Run automation
   await automation();
 
-  // Check for errors
   const logs = await callTool('console_logs', {
     tabId,
     level: 'error',
@@ -851,7 +855,16 @@ async function runWithErrorMonitoring(tabId, automation) {
   }
 
   return logs.logs;
-}</code></pre>
+}
+
+// Or watch in real time: trigger an action, then collect
+// everything the page logs over the next 30 seconds
+await callTool('click', { tabId, selector: '#start-upload' });
+const watched = await callTool('watch_console', {
+  tabId,
+  timeout: 30000
+});
+console.log('Logged during upload:', watched.logs);</code></pre>
 
         <h2 id="troubleshooting">Troubleshooting</h2>
 
@@ -861,9 +874,9 @@ async function runWithErrorMonitoring(tabId, automation) {
             <div class="tool-card">
                 <h4>"No tabs connected"</h4>
                 <ul>
-                    <li>Open Chrome DevTools (F12)</li>
-                    <li>Navigate to Kapture panel</li>
-                    <li>Check connection status</li>
+                    <li>Click the Kapture toolbar icon</li>
+                    <li>Flip the connection toggle</li>
+                    <li>Check the badge shows ✓</li>
                     <li>Reload the page if needed</li>
                 </ul>
             </div>
@@ -892,7 +905,7 @@ async function runWithErrorMonitoring(tabId, automation) {
                 <ul>
                     <li>Tab may have disconnected</li>
                     <li>Use <code>list_tabs</code> to get current tabs</li>
-                    <li>Reopen DevTools if needed</li>
+                    <li>Reconnect via the toolbar popup</li>
                 </ul>
             </div>
         </div>
@@ -900,7 +913,6 @@ async function runWithErrorMonitoring(tabId, automation) {
         <h3>Performance Tips</h3>
 
         <ol>
-            <li><strong>Keep Kapture Panel Active</strong>: Click/hover operations perform better when Kapture panel is selected</li>
             <li><strong>Use Efficient Selectors</strong>: ID selectors are fastest, followed by class, then complex selectors</li>
             <li><strong>Batch Operations</strong>: Group related commands together</li>
             <li><strong>Add Strategic Delays</strong>: Some interactions need time to complete</li>
@@ -928,7 +940,7 @@ elements.forEach(el => {
 });</code></pre>
 
         <h4>3. Monitor Console Output</h4>
-        <p>Enable real-time console monitoring in your client to see browser errors as they happen.</p>
+        <p>Use <code>console_logs</code> to inspect the console, or <code>watch_console</code> to capture browser errors in real time as they happen.</p>
 
         <h2 id="advanced-topics">Advanced Topics</h2>
 
@@ -967,8 +979,8 @@ await client.connect(transport);
 
 // Subscribe to notifications
 client.on('notification', (notification) => {
-  if (notification.method === 'kapture/console_log') {
-    console.log('Browser console:', notification.params);
+  if (notification.method === 'kapture/tabs_changed') {
+    console.log('Tabs changed:', notification.params);
   }
 });
 

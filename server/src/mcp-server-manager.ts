@@ -140,20 +140,6 @@ export class MCPServerManager {
 
       await this.sendTabListChangeNotification();
     });
-
-    // Set up console log handler
-    this.browserWebSocketManager.setConsoleLogHandler(async (tabId: string, logEntry: any) => {
-      await this.notifyAllConnections(async (connection) => {
-        await connection.server.notification({
-          method: 'kapture/console_log',
-          params: {
-            tabId,
-            logEntry,
-            timestamp: Date.now()
-          }
-        });
-      });
-    });
   }
 
   private updateTabResources(tabId: string, tabTitle: string): void {

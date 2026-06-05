@@ -1,7 +1,6 @@
 // Background service worker - manages WebSocket connections
 
 import { TabManager } from './modules/tab-manager.js';
-import {ConsoleLogEntry} from "./modules/models.js";
 
 // Single source of truth for all tab state
 const tabManager = new TabManager();
@@ -53,28 +52,11 @@ tabManager.addListener((tabId, event, tabState, data) => {
       });
       break;
 
-    case 'consoleLogAdded':
-      // Broadcast updated console count
-      tabState.broadcastToPorts({
-        type: 'consoleCount',
-        tabId,
-        count: tabState.getConsoleLogCount()
-      });
-      break;
-
     case 'messagesCleared':
       tabState.broadcastToPorts({
         type: 'messages',
         tabId,
         messages: []
-      });
-      break;
-
-    case 'consoleLogsCleared':
-      tabState.broadcastToPorts({
-        type: 'consoleCount',
-        tabId,
-        count: 0
       });
       break;
   }
@@ -107,8 +89,6 @@ chrome.runtime.onConnect.addListener((port) => {
       tabManager.addPort(msg.tabId, port);
     } else if (msg.type === 'clearMessages' && msg.tabId) {
       tabManager.clearMessages(msg.tabId);
-    } else if (msg.type === 'clearConsoleLogs' && msg.tabId) {
-      tabManager.clearConsoleLogs(msg.tabId);
     }
   });
 
@@ -161,25 +141,6 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       const tabState = tabManager.getTab(sender.tab.id);
       if (tabState) {
         tabState.setMousePosition({ x: request.x, y: request.y });
-      }
-      return false;
-    }
-
-    if (request.type === 'consoleLog') {
-      // Handle console log from content script
-      const tabState = tabManager.getTab(sender.tab.id);
-      if (tabState) {
-        if (request.level === 'clear') {
-          // Clear console logs
-          tabManager.clearConsoleLogs(sender.tab.id);
-        } else {
-          // Add console log
-          tabManager.addConsoleLog(sender.tab.id, new ConsoleLogEntry(
-            request.level,
-            request.args,
-            request.stackTrace
-          ));
-        }
       }
       return false;
     }

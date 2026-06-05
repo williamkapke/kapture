@@ -3,14 +3,6 @@ window.addEventListener('kapture-message', (event) => {
   chrome.runtime.sendMessage(event.detail);
 });
 
-// Listen for console log events from the injected code
-window.addEventListener('kapture-console', (event) => {
-  // Send console log to background script
-  chrome.runtime.sendMessage({
-    type: 'consoleLog',
-    ...event.detail
-  });
-});
 function ready() {
   // Notify background script that content script is ready
   chrome.runtime.sendMessage({ type: 'contentScriptReady' });

@@ -2,7 +2,7 @@ import { keypress } from './background-keypress.js';
 import { click, hover } from './background-click.js';
 import { navigate, back, forward, close, reload, show } from './background-navigate.js';
 import { screenshot } from './background-screenshot.js';
-import { getLogs } from './background-console.js';
+import { getLogs, watchConsole } from './background-console.js';
 
 export const getFromContentScript = async (tabId, command, params, ) => {
   return await chrome.tabs.sendMessage(tabId, { command, params });
@@ -51,24 +51,59 @@ export const respondWith = async (tabId, obj, selector, xpath) => {
 export const respondWithError = async (tabId, code, message, selector, xpath) => {
   return respondWith(tabId,{ error: { code, message } }, selector, xpath);
 }
-export async function attachDebugger(tabId, action) {
-  let debuggerAttached = false;
+// Reference-counted debugger sessions so concurrent commands (e.g. a click
+// during a watchConsole) share one attachment instead of fighting over it.
+const debuggerSessions = new Map(); // tabId -> { count, ready }
+
+// If the session dies externally (user dismisses the infobar, tab closes),
+// forget it so the next command re-attaches.
+chrome.debugger.onDetach.addListener((source) => {
+  if (source.tabId) debuggerSessions.delete(source.tabId);
+});
+
+async function acquireDebugger(tabId) {
+  let session = debuggerSessions.get(tabId);
+  if (!session) {
+    session = {
+      count: 0,
+      ready: (async () => {
+        await chrome.debugger.attach({tabId}, '1.3');
+        await chrome.debugger.sendCommand({tabId}, 'Page.enable');
+      })()
+    };
+    debuggerSessions.set(tabId, session);
+  }
+  session.count++;
   try {
-    // Attach debugger to capture screenshot without making tab active
-    await chrome.debugger.attach({tabId}, '1.3');
-    debuggerAttached = true;
+    await session.ready;
+  }
+  catch (e) {
+    session.count--;
+    if (session.count <= 0) debuggerSessions.delete(tabId);
+    throw e;
+  }
+}
 
-    // Enable the Page domain
-    await chrome.debugger.sendCommand({tabId}, 'Page.enable');
+async function releaseDebugger(tabId) {
+  const session = debuggerSessions.get(tabId);
+  if (!session) return; // already detached externally
+  session.count--;
+  if (session.count <= 0) {
+    debuggerSessions.delete(tabId);
+    try {
+      await chrome.debugger.detach({tabId: tabId});
+    }
+    catch (e) { }
+  }
+}
 
+export async function attachDebugger(tabId, action) {
+  await acquireDebugger(tabId);
+  try {
     return await action();
   }
   finally {
-    // Always detach debugger if attached
-    try {
-      if (debuggerAttached) await chrome.debugger.detach({tabId: tabId});
-    }
-    catch (e) { }
+    await releaseDebugger(tabId);
   }
 }
 
@@ -84,5 +119,6 @@ export const backgroundCommands = {
   hover,
   keypress,
   screenshot,
-  getLogs
+  getLogs,
+  watchConsole
 }

@@ -58,12 +58,34 @@ export class BrowserCommandHandler {
     if (toolName === 'new_tab') {
       return this.newTab(args?.browser);
     }
-    
+
+    if (toolName === 'watch_console') {
+      // Older extensions don't report a version and don't have the watchConsole command
+      const tab = this.tabRegistry.get(args.tabId);
+      if (tab && !tab.version) {
+        return {
+          success: false,
+          error: {
+            code: 'EXTENSION_OUTDATED',
+            message: 'The connected Kapture extension does not support watch_console. Update the extension to the latest version.'
+          }
+        };
+      }
+
+      // The extension watches for `duration` ms; pad the server-side wait so
+      // it doesn't time out the moment the watch window ends.
+      return this.executeCommand('watchConsole', {
+        ...args,
+        duration: args.timeout,
+        timeout: args.timeout + 5000
+      });
+    }
+
     // Map tool names to command names (most are the same)
     const commandMap: { [key: string]: string } = {
       'console_logs': 'getLogs'
     };
-    
+
     const command = commandMap[toolName] || toolName;
     return this.executeCommand(command, args);
   }
