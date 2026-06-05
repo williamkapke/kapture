@@ -98,6 +98,10 @@ export async function hover(tab, { selector, xpath }, click = false) {
       }
 
       const bounds = await getFromContentScript(tabId, '_elementPosition', { id: elementResult.element.id });
+      if (!bounds) {
+        // Element was removed from the DOM mid-command (e.g. the page re-rendered)
+        throw new Error(`Element disappeared before the ${click ? 'click' : 'hover'} completed`);
+      }
       const actualTargetX = bounds.x + bounds.width / 2;
       const actualTargetY = bounds.y + bounds.height / 2;
       await getFromContentScript(tabId, '_moveMouseSVG', { x: actualTargetX, y: actualTargetY });

@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kapture - Local Server</title>
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -46,7 +45,7 @@
       margin-bottom: 24px;
       display: none;
     }
-    .banner.error { display: block; background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; }
+    .banner.error { background: #fff5f5; border: 1px solid #feb2b2; color: #c53030; }
 
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
     th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
@@ -80,6 +79,8 @@
 
     .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
     .toolbar h2 { margin-bottom: 0; margin-right: auto; }
+
+    .inline-error { color: #e53e3e; font-size: 0.85rem; }
 
     a.back { color: #667eea; text-decoration: none; font-weight: 600; display: inline-block; margin-bottom: 16px; }
     a.back:hover { text-decoration: underline; }
@@ -177,6 +178,7 @@
       <div class="card">
         <div class="toolbar">
           <h2>Connected Tabs</h2>
+          <span class="inline-error" id="new-tab-error"></span>
           <select id="new-tab-browser">
             <option value="">Default browser</option>
             <option value="chrome">Chrome</option>
@@ -212,7 +214,7 @@
 
   <script>
     const BASE = 'http://127.0.0.1:61822';
-    $('#server-url').text(BASE);
+    document.getElementById('server-url').textContent = BASE;
 
     // ---------------------------------------------------------------
     // Transport: fetch with Chrome's Local Network Access opt-in.
@@ -255,6 +257,22 @@
       }
       return data;
     }
+
+    // ---------------------------------------------------------------
+    // DOM helpers
+    // ---------------------------------------------------------------
+    function el(tag, props = {}, children = []) {
+      const node = document.createElement(tag);
+      for (const [key, value] of Object.entries(props)) {
+        if (key === 'dataset') Object.assign(node.dataset, value);
+        else node[key] = value;
+      }
+      for (const child of children) node.append(child);
+      return node;
+    }
+
+    const byId = id => document.getElementById(id);
+    const show = (node, visible) => { node.style.display = visible ? '' : 'none'; };
 
     // ---------------------------------------------------------------
     // API definitions: every HTTP endpoint scoped to a tab
@@ -306,7 +324,11 @@
     // ---------------------------------------------------------------
     // Routing
     // ---------------------------------------------------------------
+    const REFRESH_INTERVAL = 5000;
+    const REFRESH_MAX = 30000;
+    let homeActive = false;
     let refreshTimer = null;
+    let refreshDelay = REFRESH_INTERVAL;
 
     function route() {
       const match = location.hash.match(/^#\/tab\/(.+)$/);
@@ -317,79 +339,113 @@
       }
     }
 
-    $(window).on('hashchange', route);
+    window.addEventListener('hashchange', route);
 
     function showHomeView() {
-      $('#view-tab').hide();
-      $('#view-home').show();
+      show(byId('view-tab'), false);
+      show(byId('view-home'), true);
+      homeActive = true;
+      refreshDelay = REFRESH_INTERVAL;
       loadHome();
-      clearInterval(refreshTimer);
-      refreshTimer = setInterval(loadHome, 5000);
     }
 
     function showTabView(tabId) {
-      clearInterval(refreshTimer);
-      $('#view-home').hide();
-      $('#view-tab').show();
+      homeActive = false;
+      clearTimeout(refreshTimer);
+      show(byId('view-home'), false);
+      show(byId('view-tab'), true);
       loadTabDetail(tabId);
       renderApiConsole(tabId);
+    }
+
+    function scheduleRefresh() {
+      if (!homeActive) return;
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(loadHome, refreshDelay);
     }
 
     // ---------------------------------------------------------------
     // Home view
     // ---------------------------------------------------------------
-    function loadHome() {
-      api('GET', '/clients')
-        .then(clients => {
-          $('#offline-banner').hide();
-          const $tbody = $('#clients-table tbody').empty();
-          (clients || []).forEach(c => {
-            $('<tr>')
-              .append($('<td class="mono">').text(c.id))
-              .append($('<td>').text(c.type || ''))
-              .append($('<td>').text(c.clientInfo?.name || '—'))
-              .append($('<td>').text(c.clientInfo?.version || '—'))
-              .append($('<td>').text(c.initialized ? 'yes' : 'no'))
-              .appendTo($tbody);
-          });
-          $('#clients-table').toggle(clients.length > 0);
-          $('#clients-empty').toggle(clients.length === 0);
-        })
-        .catch(() => $('#offline-banner').show());
+    // Keys of the last-rendered data; rebuilding rows destroys DOM identity
+    // (which breaks in-flight automation targeting them), so only re-render
+    // the tables when the displayed fields actually changed.
+    let renderedClientsKey = null;
+    let renderedTabsKey = null;
 
-      api('GET', '/tabs')
-        .then(tabs => {
-          tabs = tabs || [];
-          const $tbody = $('#tabs-table tbody').empty();
-          tabs.forEach(tab => {
-            $('<tr>')
-              .attr('data-tab-id', tab.tabId)
-              .append($('<td class="mono">').text(tab.tabId))
-              .append($('<td class="truncate">').attr('title', tab.title || '').text(tab.title || ''))
-              .append($('<td class="truncate mono">').attr('title', tab.url || '').text(tab.url || ''))
-              .append($('<td>').text(tab.browser || ''))
-              .append($('<td>').text(formatTime(tab.connectedAt)))
-              .appendTo($tbody);
-          });
-          $('#tabs-table').toggle(tabs.length > 0);
-          $('#tabs-empty').toggle(tabs.length === 0);
-        })
-        .catch(() => {});
+    async function loadHome() {
+      clearTimeout(refreshTimer);
+      try {
+        const clients = await api('GET', '/clients') || [];
+        byId('offline-banner').style.display = 'none';
+        refreshDelay = REFRESH_INTERVAL;
+        const clientsKey = JSON.stringify(clients.map(c =>
+          [c.id, c.type, c.clientInfo?.name, c.clientInfo?.version, c.initialized]));
+        if (clientsKey !== renderedClientsKey) {
+          renderedClientsKey = clientsKey;
+          document.querySelector('#clients-table tbody').replaceChildren(...clients.map(c =>
+            el('tr', {}, [
+              el('td', { className: 'mono', textContent: c.id }),
+              el('td', { textContent: c.type || '' }),
+              el('td', { textContent: c.clientInfo?.name || '—' }),
+              el('td', { textContent: c.clientInfo?.version || '—' }),
+              el('td', { textContent: c.initialized ? 'yes' : 'no' })
+            ])
+          ));
+          show(byId('clients-table'), clients.length > 0);
+          show(byId('clients-empty'), clients.length === 0);
+        }
+
+        const tabs = await api('GET', '/tabs') || [];
+        const tabsKey = JSON.stringify(tabs.map(tab =>
+          [tab.tabId, tab.title, tab.url, tab.browser, tab.connectedAt]));
+        if (tabsKey !== renderedTabsKey) {
+          renderedTabsKey = tabsKey;
+          document.querySelector('#tabs-table tbody').replaceChildren(...tabs.map(tab =>
+            el('tr', { dataset: { tabId: tab.tabId } }, [
+              el('td', { className: 'mono', textContent: tab.tabId }),
+              el('td', { className: 'truncate', title: tab.title || '', textContent: tab.title || '' }),
+              el('td', { className: 'truncate mono', title: tab.url || '', textContent: tab.url || '' }),
+              el('td', { textContent: tab.browser || '' }),
+              el('td', { textContent: formatTime(tab.connectedAt) })
+            ])
+          ));
+          show(byId('tabs-table'), tabs.length > 0);
+          show(byId('tabs-empty'), tabs.length === 0);
+        }
+      } catch {
+        byId('offline-banner').style.display = 'block';
+        // Back off while the server is unreachable
+        refreshDelay = Math.min(refreshDelay * 2, REFRESH_MAX);
+      }
+      scheduleRefresh();
     }
 
-    $('#tabs-table').on('click', 'tbody tr', function () {
-      location.hash = '#/tab/' + encodeURIComponent($(this).attr('data-tab-id'));
+    document.querySelector('#tabs-table tbody').addEventListener('click', e => {
+      const row = e.target.closest('tr[data-tab-id]');
+      if (row) location.hash = '#/tab/' + encodeURIComponent(row.dataset.tabId);
     });
 
-    $('#refresh-btn').on('click', loadHome);
+    byId('refresh-btn').addEventListener('click', () => {
+      refreshDelay = REFRESH_INTERVAL;
+      loadHome();
+    });
 
-    $('#new-tab-btn').on('click', function () {
-      const $btn = $(this).prop('disabled', true).text('Opening…');
-      const browser = $('#new-tab-browser').val();
-      api('POST', '/tabs', browser ? { browser } : {})
-        .then(loadHome)
-        .catch(error => alert('New tab failed: ' + error.message))
-        .finally(() => $btn.prop('disabled', false).text('New Tab'));
+    byId('new-tab-btn').addEventListener('click', async function () {
+      const errorSpan = byId('new-tab-error');
+      errorSpan.textContent = '';
+      this.disabled = true;
+      this.textContent = 'Opening…';
+      const browser = byId('new-tab-browser').value;
+      try {
+        await api('POST', '/tabs', browser ? { browser } : {});
+        loadHome();
+      } catch (error) {
+        errorSpan.textContent = 'New tab failed: ' + error.message;
+      } finally {
+        this.disabled = false;
+        this.textContent = 'New Tab';
+      }
     });
 
     function formatTime(value) {
@@ -401,137 +457,160 @@
     // ---------------------------------------------------------------
     // Tab detail view
     // ---------------------------------------------------------------
-    function loadTabDetail(tabId) {
-      $('#detail-title').text('Tab ' + tabId);
-      const $fields = $('#detail-fields').empty();
-      api('GET', '/tab/' + encodeURIComponent(tabId))
-        .then(tab => {
-          $('#offline-banner').hide();
-          $('#detail-title').text(tab.title || 'Tab ' + tabId);
-          Object.entries(tab).forEach(([key, value]) => {
-            if (value === undefined || value === null) return;
-            const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
-            $('<tr>')
-              .append($('<td>').text(key))
-              .append($('<td class="mono">').text(/At|Ping/.test(key) ? formatTime(value) : text))
-              .appendTo($fields);
-          });
-        })
-        .catch(error => {
-          $('<tr>').append($('<td colspan="2">').text('Failed to load tab: ' + error.message)).appendTo($fields);
+    async function loadTabDetail(tabId) {
+      byId('detail-title').textContent = 'Tab ' + tabId;
+      const fields = byId('detail-fields');
+      fields.replaceChildren();
+      try {
+        const tab = await api('GET', '/tab/' + encodeURIComponent(tabId));
+        byId('offline-banner').style.display = 'none';
+        byId('detail-title').textContent = tab.title || 'Tab ' + tabId;
+        Object.entries(tab).forEach(([key, value]) => {
+          if (value === undefined || value === null) return;
+          const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
+          fields.append(el('tr', {}, [
+            el('td', { textContent: key }),
+            el('td', { className: 'mono', textContent: /At|Ping/.test(key) ? formatTime(value) : text })
+          ]));
         });
+      } catch (error) {
+        fields.append(el('tr', {}, [
+          el('td', { colSpan: 2, textContent: 'Failed to load tab: ' + error.message })
+        ]));
+      }
     }
 
     // ---------------------------------------------------------------
     // API console
     // ---------------------------------------------------------------
     function renderApiConsole(tabId) {
-      const $console = $('#api-console').empty();
+      const nodes = [];
       let currentGroup = null;
 
-      API_DEFS.forEach((def, index) => {
+      API_DEFS.forEach(def => {
         if (def.group !== currentGroup) {
           currentGroup = def.group;
-          $console.append($('<div class="api-group-title">').text(currentGroup));
+          nodes.push(el('div', { className: 'api-group-title', textContent: currentGroup }));
         }
-
-        const pathLabel = '/tab/{tabId}' + def.path;
-        const $details = $('<details class="api">').attr('data-def', index);
-        const $summary = $('<summary>')
-          .append($('<span class="method">').addClass(def.method).text(def.method))
-          .append($('<span class="api-path">').text(pathLabel))
-          .append($('<span class="api-desc">').text(def.desc));
-        const $body = $('<div class="api-body">');
-        const $fields = $('<div class="api-fields">');
-
-        def.fields.forEach(field => {
-          const $label = $('<label>').text(field.name + (field.required ? ' *' : ''));
-          if (field.options) {
-            const $select = $('<select>').attr('data-field', field.name);
-            field.options.forEach(opt => $select.append($('<option>').val(opt).text(opt || '(default)')));
-            $label.append($select);
-          } else {
-            $label.append(
-              $('<input>')
-                .attr('data-field', field.name)
-                .attr('data-type', field.type || 'string')
-                .attr('placeholder', field.placeholder || '')
-            );
-          }
-          $fields.append($label);
-        });
-
-        if (def.fields.length) $body.append($fields);
-        $body.append($('<button>').text('Execute').on('click', function () {
-          executeApi(def, tabId, $details, $(this));
-        }));
-        $body.append('<div class="api-result"><div class="status"></div><div class="output"></div></div>');
-
-        $details.append($summary).append($body);
-        $console.append($details);
+        nodes.push(buildApiCard(def, tabId));
       });
+
+      byId('api-console').replaceChildren(...nodes);
     }
 
-    function collectArgs($details) {
+    function buildApiCard(def, tabId) {
+      const fields = el('div', { className: 'api-fields' }, def.fields.map(field => {
+        const input = field.options
+          ? el('select', { dataset: { field: field.name } },
+              field.options.map(opt => el('option', { value: opt, textContent: opt || '(default)' })))
+          : el('input', {
+              placeholder: field.placeholder || '',
+              dataset: { field: field.name, type: field.type || 'string' }
+            });
+        return el('label', { textContent: field.name + (field.required ? ' *' : '') }, [input]);
+      }));
+
+      const button = el('button', { textContent: 'Execute' });
+      const result = el('div', { className: 'api-result' }, [
+        el('div', { className: 'status' }),
+        el('div', { className: 'output' })
+      ]);
+      const body = el('div', { className: 'api-body' });
+      if (def.fields.length) body.append(fields);
+      body.append(button, result);
+
+      const card = el('details', { className: 'api' }, [
+        el('summary', {}, [
+          el('span', { className: 'method ' + def.method, textContent: def.method }),
+          el('span', { className: 'api-path', textContent: '/tab/{tabId}' + def.path }),
+          el('span', { className: 'api-desc', textContent: def.desc })
+        ]),
+        body
+      ]);
+
+      let disarmTimer = null;
+      button.addEventListener('click', () => {
+        // Destructive endpoints arm on first click, execute on second
+        if (def.confirm && !button.dataset.armed) {
+          button.dataset.armed = '1';
+          button.textContent = 'Confirm ' + def.name;
+          disarmTimer = setTimeout(() => {
+            delete button.dataset.armed;
+            button.textContent = 'Execute';
+          }, 3000);
+          return;
+        }
+        if (def.confirm) {
+          clearTimeout(disarmTimer);
+          delete button.dataset.armed;
+          button.textContent = 'Execute';
+        }
+        executeApi(def, tabId, card, button);
+      });
+
+      return card;
+    }
+
+    function collectArgs(card) {
       const args = {};
-      $details.find('[data-field]').each(function () {
-        const value = $(this).val().trim();
+      card.querySelectorAll('[data-field]').forEach(input => {
+        const value = input.value.trim();
         if (value === '') return;
-        const name = $(this).attr('data-field');
-        args[name] = $(this).attr('data-type') === 'number' ? Number(value) : value;
+        args[input.dataset.field] = input.dataset.type === 'number' ? Number(value) : value;
       });
       return args;
     }
 
-    function executeApi(def, tabId, $details, $btn) {
-      if (def.confirm && !window.confirm('Close this tab?')) return;
-
-      const args = collectArgs($details);
-      const url = BASE + '/tab/' + encodeURIComponent(tabId) + def.path;
-      const $result = $details.find('.api-result').show();
-      const $status = $result.find('.status').removeClass('ok err').text('…');
-      const $output = $result.find('.output').empty();
-      $btn.prop('disabled', true);
-
-      // Screenshot returns an image - fetch it as a blob (an <img> src
-      // can't carry the Local Network Access opt-in)
-      if (def.image) {
-        const query = $.param(args);
-        const src = url + (query ? '?' + query : '');
-        localFetch(src, { cache: 'no-store' })
-          .then(res => {
-            if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
-            return res.blob();
-          })
-          .then(blob => {
-            $status.addClass('ok').text('GET ' + src);
-            $output.append($('<img>').attr('src', URL.createObjectURL(blob)));
-          })
-          .catch(() => {
-            $status.addClass('err').text('Failed to load screenshot - is the tab still connected?');
-          })
-          .finally(() => $btn.prop('disabled', false));
-        return;
-      }
-
+    async function executeApi(def, tabId, card, button) {
+      const args = collectArgs(card);
       const path = '/tab/' + encodeURIComponent(tabId) + def.path;
-      const request = def.method === 'GET'
-        ? api('GET', path + (Object.keys(args).length ? '?' + $.param(args) : ''))
-        : def.method === 'DELETE'
-          ? api('DELETE', path)
-          : api('POST', path, args);
+      const url = BASE + path;
+      const status = card.querySelector('.status');
+      const output = card.querySelector('.output');
+      card.querySelector('.api-result').style.display = 'block';
+      status.className = 'status';
+      status.textContent = '…';
+      output.replaceChildren();
+      button.disabled = true;
 
-      request
-        .then(data => {
-          $status.addClass('ok').text('200 ' + def.method + ' ' + url);
-          $output.append($('<pre>').text(pretty(data)));
-          if (def.name === 'close') location.hash = '#/';
-        })
-        .catch(error => {
-          $status.addClass('err').text((error.status || 'error') + ' ' + def.method + ' ' + url);
-          $output.append($('<pre>').text(pretty(error.data || error.message)));
-        })
-        .finally(() => $btn.prop('disabled', false));
+      try {
+        // Screenshot returns an image - fetch it as a blob (an <img> src
+        // can't carry the Local Network Access opt-in)
+        if (def.image) {
+          const query = new URLSearchParams(args).toString();
+          const src = url + (query ? '?' + query : '');
+          const res = await localFetch(src, { cache: 'no-store' });
+          if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+          const blob = await res.blob();
+          if (card._screenshotUrl) URL.revokeObjectURL(card._screenshotUrl);
+          card._screenshotUrl = URL.createObjectURL(blob);
+          status.classList.add('ok');
+          status.textContent = 'GET ' + src;
+          output.append(el('img', { src: card._screenshotUrl }));
+          return;
+        }
+
+        const query = def.method === 'GET' && Object.keys(args).length
+          ? '?' + new URLSearchParams(args).toString() : '';
+        const data = def.method === 'POST' ? await api('POST', path, args)
+          : def.method === 'DELETE' ? await api('DELETE', path)
+          : await api('GET', path + query);
+
+        status.classList.add('ok');
+        status.textContent = '200 ' + def.method + ' ' + url;
+        output.append(el('pre', { textContent: pretty(data) }));
+        if (def.name === 'close') location.hash = '#/';
+      } catch (error) {
+        status.classList.add('err');
+        if (def.image) {
+          status.textContent = 'Failed to load screenshot - is the tab still connected?';
+        } else {
+          status.textContent = (error.status || 'error') + ' ' + def.method + ' ' + url;
+          output.append(el('pre', { textContent: pretty(error.data || error.message) }));
+        }
+      } finally {
+        button.disabled = false;
+      }
     }
 
     function pretty(data) {

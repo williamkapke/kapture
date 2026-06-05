@@ -320,7 +320,8 @@ const helpers = {
   },
   _elementPosition: ({ id }) => {
     const element = document.getElementById(id);
-    return element.getBoundingClientRect();
+    // Null when the element was removed mid-command (e.g. the page re-rendered)
+    return element ? element.getBoundingClientRect() : null;
   },
   _connectionStateChanged: ({ status, connected }) => {
     // Remove existing connection classes
