@@ -233,7 +233,10 @@ export class MCPServerManager {
       }
 
       return {
-        protocolVersion: '2024-11-05',
+        // Echo the client's requested protocol version so strict clients
+        // (e.g. current Claude Desktop sending 2025-11-25) don't reject a
+        // hardcoded mismatch and crash-loop.
+        protocolVersion: request.params.protocolVersion,
         capabilities: {
           tools: {},
           resources: {}
