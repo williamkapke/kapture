@@ -12,7 +12,7 @@ Kapture is a Chrome DevTools Extension that enables browser automation through t
 
 Kapture bridges AI assistants with web browsers through:
 - **MCP Server**: Handles MCP protocol communication
-- **Chrome Extension**: DevTools panel for browser automation
+- **Chrome Extension**: Background service worker executes browser automation commands (DevTools does not need to be open)
 - **WebSocket Bridge**: Real-time communication between server and extensions
 - **Multi-Client Support**: Multiple AI clients can connect simultaneously via WebSocket
 
@@ -71,13 +71,13 @@ cd test-app
 npm start
 ```
 
-### 4. Connect via DevTools
+### 4. Connect a Tab
 
 1. Open any website in Chrome
-2. Open Chrome/Brave Developer Tools (F12 on Windows/Linux, Cmd+Option+I on macOS)
-3. Navigate to "Kapture" panel
-4. The extension will automatically connect to the server on port 61822
-5. Select a server from the dropdown to connect automatically
+2. Click the Kapture toolbar icon and flip the connection toggle
+3. The extension connects to the server on port 61822 (the badge shows ✓ when connected)
+
+Alternatively, connect from the "Kapture" panel in DevTools, or load a page with `?kapture-connect=true` in the URL to auto-connect.
 
 ## Using with Claude Desktop
 
@@ -267,35 +267,36 @@ After making changes:
 
 ### Key Components
 
-**Server** (`/server`):
-- `mcp-handler.ts` - MCP protocol implementation
-- `websocket-manager.ts` - WebSocket server
+**Server** (`/server/src`):
+- `mcp-server-manager.ts` - MCP protocol implementation (one server instance per client)
+- `browser-websocket-manager.ts` - WebSocket server for extension connections
 - `tab-registry.ts` - Tab tracking
-- `tools/*.ts` - MCP tool implementations
+- `tool-handler.ts` + `tools.yaml` - MCP tool definitions and dispatch
 
 **Extension** (`/extension`):
-- `panel/command-executor.js` - Command execution
-- `panel/command-queue.js` - Sequential execution
-- `background.js` - Screenshot service worker
+- `background.js` + `modules/` - Service worker: owns WebSocket connections and executes commands (via `chrome.debugger` and `chrome.tabs` APIs)
+- `page-helpers.js` - Content script handling DOM commands (`dom`, `elements`, `fill`, `select`, ...)
+- `console-listener.js` - Content script capturing console logs
+- `popup.js` - Toolbar popup with connection toggle
+- `panel.js` - DevTools panel (connection toggle, WebSocket message viewer, console log count)
 
 ## DevTools Panel Features
 
-- **Automatic Connection** - Connects to server on port 61822
-- **Server Selection** - Dropdown to choose between multiple running servers
+- **Connection Toggle** - Connect/disconnect the inspected tab
 - **Connection Status** - Real-time server connection indicator
-- **Tab Info** - Current tab ID and URL display
-- **Command Testing** - Manual command execution interface
-- **Console Viewer** - Live console log capture
-- **History** - Command history
-- **Dark Theme** - Toggle between light/dark modes
+- **Message Viewer** - Live view of WebSocket messages between extension and server
+- **Console Count** - Number of captured console log entries
+- **Keepalive Setting** - Configurable ping interval
+
+The panel is optional — connections and commands are handled by the background service worker, so automation works with DevTools closed.
 
 ## Troubleshooting
 
 ### Connection Issues
-- The extension will automatically connect to the server on port 61822
-- If no servers are found, verify the server is running
-- Check the server dropdown to see which servers were discovered
-- Check browser console for errors
+- The extension connects to the server on port 61822
+- Verify the server is running (`curl http://localhost:61822/`)
+- Check the toolbar icon badge: ✓ = connected, ↻ = retrying
+- Check the background service worker console (`chrome://extensions/` → Kapture → service worker)
 - Check server logs in the terminal
 
 ### Extension Not Showing
@@ -308,15 +309,9 @@ After making changes:
 - Some commands accept custom timeout parameter
 - Check element selectors are correct
 
-### Performance Considerations
-**Important**: The `click` and `hover` tools may experience performance issues when the Kapture DevTools panel is not the active/selected tab in Chrome DevTools. For optimal performance:
-- Keep the Kapture panel selected during automation
-- If experiencing delays with click/hover operations, switch to the Kapture panel
-- This is due to Chrome's optimization of inactive DevTools panels
-
 ## Security
 
-- Commands execute within Chrome's DevTools sandbox
+- DOM commands run in the content script's isolated world; input/navigation/screenshot commands use `chrome.debugger` (CDP)
 - Each tab has unique ID preventing cross-tab interference
 - No direct file system access from extension
 - Tab registry enforces command isolation
