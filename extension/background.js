@@ -202,5 +202,17 @@ chrome.runtime.onInstalled.addListener((details) => {
         chrome.tabs.create(destination);
       }
     });
+  } else if (details.reason === 'update') {
+    // Show "what's new" on a real version change. 'update' also fires on every
+    // reload of an unpacked extension (same version), so guard on the version
+    // actually changing. Open a new tab rather than hijacking the active one,
+    // since updates land automatically in the background while the user works.
+    const currentVersion = chrome.runtime.getManifest().version;
+    if (details.previousVersion && details.previousVersion !== currentVersion) {
+      chrome.tabs.create({ url: 'https://to.kap.co/releases' });
+    }
   }
 });
+
+// Open a friendly page when the user removes the extension.
+chrome.runtime.setUninstallURL('https://to.kap.co/uninstalled');
