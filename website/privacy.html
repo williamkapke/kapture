@@ -29,7 +29,7 @@
 
     <div class="content">
         <h1>Privacy Policy</h1>
-        <p class="last-updated"><strong>Last Updated: December 2024</strong></p>
+        <p class="last-updated"><strong>Last Updated: June 2026</strong></p>
 
         <h2>Overview</h2>
         <p>Kapture Browser Automation ("the Extension") is designed to enable local browser automation through the Model Context Protocol (MCP). This privacy policy explains how the Extension handles user data.</p>
@@ -84,13 +84,14 @@
             <li>A temporary session Tab ID for the current browser tab</li>
             <li>Command history for the current session (cleared on disconnect)</li>
         </ul>
-        <p>No persistent data is stored between browser sessions.</p>
+        <p>The only thing saved between browser sessions is the keepalive interval you choose in the DevTools panel. No browsing data, page content, or personal information is persisted.</p>
 
         <h2>Permissions</h2>
         <p>The Extension requires certain Chrome permissions:</p>
         <ul>
-            <li><code>tabs</code>: To access tab information and execute scripts</li>
-            <li><code>debugger</code>: To capture screenshots</li>
+            <li><code>activeTab</code>: To work with the current tab when you connect it</li>
+            <li><code>debugger</code>: To perform input, navigation, screenshots, and console capture (and, only when you enable it, JavaScript execution) via the Chrome DevTools Protocol</li>
+            <li><code>storage</code>: To save a single setting, the keepalive interval you configure in the DevTools panel</li>
             <li><code>&lt;all_urls&gt;</code>: To interact with any website you choose to automate</li>
         </ul>
         <p>These permissions are used solely for providing automation functionality and are never used for tracking or data collection.</p>
