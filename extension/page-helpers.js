@@ -315,9 +315,6 @@ function requireSelectorOrXpath(selector, xpath) {
 
 const helpers = {
   //called by the background script
-  _navigate: ({ url }) => {
-    window.location.href = url;
-  },
   _elementPosition: ({ id }) => {
     const element = document.getElementById(id);
     // Null when the element was removed mid-command (e.g. the page re-rendered)

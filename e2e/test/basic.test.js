@@ -87,62 +87,7 @@ describe('Kapture E2E Tests', function() {
       expect(result.content[1].data).to.be.a('string');
     });
 
-    it.skip('should navigate back in history', async function() {
-      // First navigate to a new page to have history
-      await framework.callTool('navigate', {
-        tabId: testTab.tabId,
-        url: 'http://localhost:61822/test.html'
-      });
-
-      await framework.callTool('navigate', {
-        tabId: testTab.tabId,
-        url: 'http://lvh.me:61822/test.html'
-      });
-
-      // Now go back
-      const result = await framework.callTool('back', {
-        tabId: testTab.tabId
-      });
-
-      const resultData = JSON.parse(result.content[0].text);
-      expectValidTabInfo(resultData);
-
-      // Verify we're back at localhost
-      const tabInfo = await framework.readResource(`kapture://tab/${testTab.tabId}`);
-      const tab = JSON.parse(tabInfo.contents[0].text);
-      expect(tab.url).to.include('localhost:61822');
-    });
-
-    it.skip('should navigate forward in history', async function() {
-      // First set up history
-      await framework.callTool('navigate', {
-        tabId: testTab.tabId,
-        url: 'http://lvh.me:61822/test.html?page=1'
-      });
-
-      await framework.callTool('navigate', {
-        tabId: testTab.tabId,
-        url: 'http://lvh.me:61822/test.html?page=2'
-      });
-
-      // Go back to page=1
-      await framework.callTool('back', {
-        tabId: testTab.tabId
-      });
-
-      // Now go forward
-      const result = await framework.callTool('forward', {
-        tabId: testTab.tabId
-      });
-
-      const resultData = JSON.parse(result.content[0].text);
-      expectValidTabInfo(resultData);
-
-      // Verify we're back at page=2
-      const tabInfo = await framework.readResource(`kapture://tab/${testTab.tabId}`);
-      const tab = JSON.parse(tabInfo.contents[0].text);
-      expect(tab.url).to.include('page=2');
-    });
+    // back/forward in history are covered by back-forward.test.js
 
     it('should block navigation to non-http(s) URLs', async function() {
       const result = await framework.callTool('navigate', {
@@ -156,20 +101,18 @@ describe('Kapture E2E Tests', function() {
     });
 
     it('should handle back with no history', async function() {
-      // First navigate to reset history
-      await framework.callTool('navigate', {
-        tabId: testTab.tabId,
-        url: 'http://lvh.me:61822/test.html'
-      });
+      // A freshly opened tab has a single history entry, so back must fail.
+      // (The shared test tab accumulates history, so it can't reproduce this.)
+      const newTab = await framework.callToolAndParse('new_tab', {});
+      expect(newTab.success).to.equal(true);
 
-      // Try to go back when there's no history
-      const result = await framework.callTool('back', {
-        tabId: testTab.tabId
-      });
-
-      const resultData = JSON.parse(result.content[0].text);
-      expect(resultData).to.have.property('error');
-      expect(resultData.error.code).to.equal('NAVIGATION_FAILED');
+      try {
+        const resultData = await framework.callToolAndParse('back', { tabId: newTab.tabId });
+        expect(resultData).to.have.property('error');
+        expect(resultData.error.code).to.equal('NAVIGATION_FAILED');
+      } finally {
+        await framework.callTool('close', { tabId: newTab.tabId });
+      }
     });
   });
 });
