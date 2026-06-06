@@ -377,8 +377,10 @@ tools:
     description: >-
       Run a sequence of commands against a single tab in one call. The script is
       one command per line in the form `<tool>?<query-string>` - a URL query
-      string whose keys are that tool's parameters (e.g.
-      `fill?selector=%23email&value=a%40b.com`). Commands run in order and stop
+      string whose keys are exactly that tool's own parameters. URL-encode each
+      value: spaces as %20 or +, and especially &, %, and newlines (%0A). For
+      example, two lines: `fill?selector=%23q&value=tom%20%26%20jerry` then
+      `wait?t=500`. Commands run in order and stop
       at the first failure (a command erroring or not finding its element). The
       whole script is validated first, so an invalid script runs nothing.
       Returns an array of the per-command responses in order; on failure the
