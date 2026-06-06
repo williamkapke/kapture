@@ -1,284 +1,105 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="indigo" data-font="grotesk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>What's New in v1.0 - Kapture Browser Automation</title>
-    <meta name="description" content="What's new in Kapture v1.0: run JavaScript, type like a real user, scroll, and run command sequences.">
-    <meta property="og:title" content="What's New in Kapture v1.0">
-    <meta property="og:description" content="Run JavaScript, type like a real user, scroll, and run command sequences.">
-    <meta property="og:url" content="https://williamkapke.github.io/kapture/releases.html">
-    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
-    <link rel="alternate icon" type="image/png" href="assets/images/icon48.png">
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        .release-hero {
-            margin-top: 80px;
-            padding: 90px 20px 60px;
-            text-align: center;
-            background: linear-gradient(to bottom, #f7fafc, #ffffff);
-        }
-        .release-tag {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 999px;
-            background: #ede9fe;
-            color: #6b46c1;
-            font-weight: 700;
-            font-size: 0.85rem;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            margin-bottom: 24px;
-        }
-        .release-hero h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            line-height: 1.1;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .release-hero p {
-            font-size: 1.25rem;
-            color: #4a5568;
-            max-width: 640px;
-            margin: 20px auto 0;
-        }
-
-        .release-grid {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 20px 20px 40px;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 28px;
-        }
-        .release-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 6px 24px rgba(45, 55, 72, 0.06);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .release-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 14px 34px rgba(102, 126, 234, 0.14);
-        }
-        .release-card h2 {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #1a202c;
-            margin-bottom: 12px;
-        }
-        .release-card p {
-            color: #4a5568;
-            line-height: 1.65;
-        }
-        .release-card.wide {
-            grid-column: 1 / -1;
-            display: grid;
-            grid-template-columns: 1.4fr 1fr;
-            gap: 36px;
-            align-items: center;
-        }
-
-        .tool-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 18px;
-        }
-        .tool-tags code {
-            font-family: 'SF Mono', 'Fira Code', Menlo, monospace;
-            font-size: 0.85rem;
-            padding: 5px 12px;
-            border-radius: 8px;
-            background: #f1f5f9;
-            color: #4c51bf;
-            border: 1px solid #e2e8f0;
-        }
-
-        /* Recreated "Allow JS execution" toggle from the extension UI */
-        .toggle-demo {
-            background: #202124;
-            border-radius: 12px;
-            padding: 22px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        .toggle-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-        }
-        .toggle-row .label {
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-        .toggle-row .label.connected { color: #81c995; }
-        .toggle-row .label.danger { color: #f28b82; }
-        .switch {
-            width: 46px;
-            height: 24px;
-            border-radius: 999px;
-            position: relative;
-            flex-shrink: 0;
-        }
-        .switch::after {
-            content: "";
-            position: absolute;
-            top: 3px;
-            right: 3px;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: #f1f3f4;
-        }
-        .switch.on-green { background: #81c995; }
-        .switch.on-red { background: #f28b82; }
-
-        .fixes {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 20px 20px 80px;
-        }
-        .fixes h2 {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: #1a202c;
-            margin-bottom: 20px;
-        }
-        .fixes ul {
-            list-style: none;
-            display: grid;
-            gap: 12px;
-        }
-        .fixes li {
-            position: relative;
-            padding-left: 30px;
-            color: #4a5568;
-            line-height: 1.6;
-        }
-        .fixes li::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 9px;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .release-cta {
-            max-width: 980px;
-            margin: 0 auto 90px;
-            padding: 0 20px;
-        }
-
-        @media (max-width: 760px) {
-            .release-hero h1 { font-size: 2.6rem; }
-            .release-grid { grid-template-columns: 1fr; }
-            .release-card.wide { grid-template-columns: 1fr; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What's New in v1.0 — Kapture</title>
+<meta name="description" content="What's new in Kapture v1.0: run JavaScript, type like a real user, scroll, and run command sequences.">
+<meta property="og:title" content="What's New in Kapture v1.0">
+<meta property="og:description" content="Run JavaScript, type like a real user, scroll, and run command sequences.">
+<meta property="og:url" content="https://williamkapke.github.io/kapture/releases.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="alternate icon" type="image/png" href="assets/images/icon48.png">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <nav class="nav">
-        <div class="nav-content">
-            <a href="index.html" class="logo">
-                <span>Kapture</span>
-            </a>
-            <ul class="nav-links">
-                <li><a href="index.html#how-it-works">How it Works</a></li>
-                <li><a href="index.html#tools">Tools</a></li>
-                <li><a href="MCP_USAGE.html">Docs</a></li>
-                <li><a href="https://github.com/williamkapke/kapture">GitHub</a></li>
-            </ul>
-        </div>
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><linearGradient id="kapGrad" x1="0" y1="0" x2="1" y2="1"><stop class="s0" offset="0"></stop><stop class="s1" offset="1"></stop></linearGradient></defs></svg>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span> Kapture</a>
+    <nav class="nav-links">
+      <a href="index.html#action">In Action</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#why">Why Kapture</a>
+      <a href="index.html#how">How it Works</a>
+      <a href="MCP_USAGE.html">Docs</a>
     </nav>
-
-    <header class="release-hero">
-        <span class="release-tag">Version 1.0</span>
-        <h1>New ways to drive the page</h1>
-        <p>This release adds the most-requested controls: running JavaScript, typing the way a person does, scrolling, and batching commands. Chrome updates the extension automatically, so you already have it.</p>
-    </header>
-
-    <main class="release-grid">
-        <section class="release-card wide">
-            <div>
-                <h2>Run JavaScript in the page</h2>
-                <p>The new <code>evaluate</code> tool runs JavaScript and returns the result, for the moments when no other tool quite fits. It stays off until you allow it: flip the red <strong>Allow JS execution</strong> switch in the toolbar popup or the DevTools panel. The grant is per tab and clears the instant that tab disconnects, so an assistant can never turn it on by itself.</p>
-                <div class="tool-tags"><code>evaluate</code></div>
-            </div>
-            <div class="toggle-demo">
-                <div class="toggle-row">
-                    <span class="label connected">Connected</span>
-                    <span class="switch on-green"></span>
-                </div>
-                <div class="toggle-row">
-                    <span class="label danger">Allow JS execution</span>
-                    <span class="switch on-red"></span>
-                </div>
-            </div>
-        </section>
-
-        <section class="release-card">
-            <h2>Type like a real user</h2>
-            <p>Three tools that go through the real keyboard pipeline, so they work on custom inputs and rich editors that ignore programmatic value-setting.</p>
-            <div class="tool-tags">
-                <code>type</code>
-                <code>insertText</code>
-                <code>clear</code>
-            </div>
-        </section>
-
-        <section class="release-card">
-            <h2>Scroll</h2>
-            <p>Bring an element into view, or scroll to an exact coordinate, with a single call.</p>
-            <div class="tool-tags"><code>scroll</code></div>
-        </section>
-
-        <section class="release-card wide">
-            <div>
-                <h2>Run a sequence in one call</h2>
-                <p>The new <code>compose</code> tool runs a list of commands against a tab in a single call, one per line, stopping at the first failure. Far fewer round-trips for multi-step actions like fill, then click, then scroll.</p>
-            </div>
-            <div class="tool-tags"><code>compose</code></div>
-        </section>
-    </main>
-
-    <section class="fixes">
-        <h2>Fixes and polish</h2>
-        <ul>
-            <li>Back and forward now work reliably after navigating.</li>
-            <li>The connection toggle no longer drifts out of sync with the actual state.</li>
-            <li>Assorted dashboard and panel cleanups.</li>
-        </ul>
-    </section>
-
-    <div class="release-cta">
-        <div class="button-group">
-            <a href="MCP_USAGE.html" class="btn btn-primary">Read the docs</a>
-            <a href="how-to.html" class="btn btn-secondary">See examples</a>
-        </div>
+    <div class="nav-cta">
+      <a class="btn btn-ghost btn-sm" href="https://github.com/williamkapke/kapture"><i data-lucide="github"></i> GitHub</a>
+      <a class="btn btn-primary btn-sm" href="https://to.kap.co/kapture-extension">Install</a>
     </div>
+  </div>
+</header>
 
-    <footer class="footer">
-        <div class="footer-links">
-            <a href="https://github.com/williamkapke/kapture">GitHub</a>
-            <a href="MCP_USAGE.html">Documentation</a>
-            <a href="https://github.com/williamkapke/kapture/issues">Issues</a>
-            <a href="https://github.com/williamkapke/kapture#contributing">Contribute</a>
-            <a href="privacy.html">Privacy Policy</a>
-        </div>
-        <div class="footer-bottom">
-            <p>Kapture is an independent open-source project focused on reliable browser automation for AI applications</p>
-        </div>
-    </footer>
+<main>
+<section class="page"><div class="wrap"><article class="doc">
+  <span class="eyebrow">Version 1.0</span>
+  <h1>New ways to drive the page</h1>
+  <p class="lead">This release adds the most-requested controls: running JavaScript, typing the way a person does, scrolling, and batching commands. Chrome updates the extension automatically, so you already have it.</p>
+
+  <div class="callout">
+    <h3>Run JavaScript in the page</h3>
+    <p>The new <code>evaluate</code> tool runs JavaScript and returns the result, for the moments when no other tool quite fits. It stays off until you allow it: flip the red <strong>Allow JS execution</strong> switch in the toolbar popup or the DevTools panel. The grant is per tab and clears the instant that tab disconnects, so an assistant can never turn it on by itself.</p>
+    <img src="assets/images/allow-js-toggle.png" alt="The Connected and Allow JS execution toggles in the Kapture popup" style="max-width:340px;width:100%;margin-top:18px;border-radius:12px;border:1px solid var(--line)">
+  </div>
+
+  <div class="callout">
+    <h3>Type like a real user</h3>
+    <p>Three tools that go through the real keyboard pipeline, so they work on custom inputs and rich editors that ignore programmatic value-setting:</p>
+    <ul>
+      <li><code>type</code> — sends a string as individual keystrokes</li>
+      <li><code>insertText</code> — drops in a whole block at once (great for large text and editors like Google Docs)</li>
+      <li><code>clear</code> — empties a field reliably</li>
+    </ul>
+  </div>
+
+  <div class="callout">
+    <h3>Scroll</h3>
+    <p>The new <code>scroll</code> tool brings an element into view, or scrolls to an exact coordinate.</p>
+  </div>
+
+  <div class="callout">
+    <h3>Compose: many commands in one call</h3>
+    <p>The new <code>compose</code> tool runs a sequence of commands against a tab in a single call, one command per line, stopping at the first failure. Fewer round-trips for multi-step actions like fill, then click, then scroll.</p>
+    <p style="margin-top:14px"><a class="btn btn-ghost btn-sm" href="compose.html"><i data-lucide="arrow-right"></i> Read the compose guide</a></p>
+  </div>
+
+  <h2>Fixes &amp; polish</h2>
+  <ul>
+    <li><strong>Back and forward now work reliably</strong> after navigating.</li>
+    <li>The connection toggle no longer drifts out of sync with the actual state.</li>
+    <li>Assorted dashboard and panel cleanups.</li>
+  </ul>
+
+  <p style="margin-top:32px">
+    <a class="btn btn-primary" href="MCP_USAGE.html"><i data-lucide="book-open"></i> Read the docs</a>
+    <a class="btn btn-ghost" href="how-to.html" style="margin-left:8px"><i data-lucide="sparkles"></i> See examples</a>
+  </p>
+</article></div></section>
+</main>
+
+<footer class="divider">
+  <div class="wrap">
+    <div class="foot">
+      <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span> Kapture</a>
+      <div class="foot-links">
+        <a href="https://github.com/williamkapke/kapture"><i data-lucide="github" style="width:15px;height:15px;vertical-align:-2px"></i> GitHub</a>
+        <a href="MCP_USAGE.html">Documentation</a>
+        <a href="https://github.com/williamkapke/kapture/issues">Issues</a>
+        <a href="https://github.com/williamkapke/kapture#contributing">Contribute</a>
+        <a href="privacy.html">Privacy</a>
+      </div>
+    </div>
+    <p class="foot-note">Kapture is an independent, open-source project focused on reliable browser automation for AI applications.</p>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.456.0/dist/umd/lucide.min.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

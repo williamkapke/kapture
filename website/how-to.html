@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>How to Use Kapture - Interactive Examples</title>
     <meta name="description" content="Learn how to use Kapture through interactive examples of AI controlling your browser">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
     <link rel="alternate icon" type="image/png" href="assets/images/icon48.png">
     <link rel="stylesheet" href="styles.css">
@@ -264,20 +267,25 @@
     </style>
 </head>
 <body>
-    <nav class="nav">
-        <div class="nav-content">
-            <a href="index.html" class="logo">
-                <img src="assets/logo.svg" alt="Kapture" style="height: 28px; width: auto; margin-right: 8px;">
-                <span>Kapture</span>
-            </a>
-            <ul class="nav-links">
-                <li><a href="install.html">Install</a></li>
-                <li><a href="how-to.html" class="active">How To</a></li>
-                <li><a href="privacy.html">Privacy</a></li>
-                <li><a href="https://github.com/williamkapke/kapture">GitHub</a></li>
-            </ul>
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><linearGradient id="kapGrad" x1="0" y1="0" x2="1" y2="1"><stop class="s0" offset="0"></stop><stop class="s1" offset="1"></stop></linearGradient></defs></svg>
+
+    <header class="nav" id="nav">
+      <div class="wrap nav-inner">
+        <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span> Kapture</a>
+        <nav class="nav-links">
+          <a href="index.html#action">In Action</a>
+          <a href="index.html#tools">Tools</a>
+          <a href="index.html#why">Why Kapture</a>
+          <a href="index.html#how">How it Works</a>
+          <a href="MCP_USAGE.html">Docs</a>
+        </nav>
+        <div class="nav-cta">
+          <a class="btn btn-ghost btn-sm" href="https://github.com/williamkapke/kapture"><i data-lucide="github"></i> GitHub</a>
+          <a class="btn btn-primary btn-sm" href="https://to.kap.co/kapture-extension">Install</a>
         </div>
-    </nav>
+      </div>
+    </header>
 
     <main class="how-to-container">
         <div class="how-to-header">
@@ -860,14 +868,24 @@
         </div>
     </main>
 
-    <footer class="footer">
-        <p>&copy; 2024 Kapture. All rights reserved.</p>
-        <div class="footer-links">
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="https://github.com/williamkapke/kapture" target="_blank">GitHub</a>
+    <footer class="divider">
+      <div class="wrap">
+        <div class="foot">
+          <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span> Kapture</a>
+          <div class="foot-links">
+            <a href="https://github.com/williamkapke/kapture"><i data-lucide="github" style="width:15px;height:15px;vertical-align:-2px"></i> GitHub</a>
+            <a href="MCP_USAGE.html">Documentation</a>
+            <a href="https://github.com/williamkapke/kapture/issues">Issues</a>
+            <a href="https://github.com/williamkapke/kapture#contributing">Contribute</a>
+            <a href="privacy.html">Privacy</a>
+          </div>
         </div>
+        <p class="foot-note">Kapture is an independent, open-source project focused on reliable browser automation for AI applications.</p>
+      </div>
     </footer>
 
+    <script src="https://unpkg.com/lucide@0.456.0/dist/umd/lucide.min.js"></script>
+    <script src="app.js"></script>
     <script>
         // Auto-connect when Kapture is loaded
         window.addEventListener('kapture-loaded', () => {

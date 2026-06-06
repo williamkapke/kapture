@@ -1,140 +1,119 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="indigo" data-font="grotesk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - Kapture Browser Automation</title>
-    <meta name="description" content="Privacy Policy for Kapture Browser Automation - 100% local operation, no data collection, no tracking.">
-    <meta property="og:title" content="Privacy Policy - Kapture Browser Automation">
-    <meta property="og:description" content="Privacy Policy for Kapture Browser Automation - 100% local operation, no data collection, no tracking.">
-    <meta property="og:url" content="https://williamkapke.github.io/kapture/privacy.html">
-    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
-    <link rel="alternate icon" type="image/png" href="assets/images/icon48.png">
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — Kapture</title>
+<meta name="description" content="Privacy Policy for Kapture Browser Automation — 100% local operation, no data collection, no tracking.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="alternate icon" type="image/png" href="assets/images/icon48.png">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <nav class="nav">
-        <div class="nav-content">
-            <a href="index.html" class="logo">
-                <span>Kapture</span>
-            </a>
-            <ul class="nav-links">
-                <li><a href="index.html#how-it-works">How it Works</a></li>
-                <li><a href="index.html#tools">Tools</a></li>
-                <li><a href="MCP_USAGE.html">Docs</a></li>
-                <li><a href="https://github.com/williamkapke/kapture">GitHub</a></li>
-            </ul>
-        </div>
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><linearGradient id="kapGrad" x1="0" y1="0" x2="1" y2="1"><stop class="s0" offset="0"></stop><stop class="s1" offset="1"></stop></linearGradient></defs></svg>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span> Kapture</a>
+    <nav class="nav-links">
+      <a href="index.html#action">In Action</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#why">Why Kapture</a>
+      <a href="index.html#how">How it Works</a>
+      <a href="MCP_USAGE.html">Docs</a>
     </nav>
-
-    <div class="content">
-        <h1>Privacy Policy</h1>
-        <p class="last-updated"><strong>Last Updated: June 2026</strong></p>
-
-        <h2>Overview</h2>
-        <p>Kapture Browser Automation ("the Extension") is designed to enable local browser automation through the Model Context Protocol (MCP). This privacy policy explains how the Extension handles user data.</p>
-
-        <h2>Data Collection and Usage</h2>
-
-        <div class="highlight-box">
-            <h3>What We Access</h3>
-            <p>The Extension may access:</p>
-            <ul>
-                <li>Current tab URL and title</li>
-                <li>Page content (HTML/DOM) when requested</li>
-                <li>Browser console logs when requested</li>
-                <li>Screenshots of the current tab when requested</li>
-                <li>Form field values when automating interactions</li>
-            </ul>
-        </div>
-
-        <div class="highlight-box">
-            <h3>What We DON'T Do</h3>
-            <ul>
-                <li>We do NOT collect or store any personal information</li>
-                <li>We do NOT send any data to external servers</li>
-                <li>We do NOT track your browsing history</li>
-                <li>We do NOT use analytics or tracking services</li>
-                <li>We do NOT sell or share any data</li>
-            </ul>
-        </div>
-
-        <h3>Local Operation Only</h3>
-        <p>All Extension operations are strictly local:</p>
-        <ul>
-            <li>Communication occurs only with localhost (127.0.0.1) on port 61822</li>
-            <li>Data is transmitted only to the MCP server running on your local machine</li>
-            <li>No internet connection is required for Extension operation</li>
-            <li>No data leaves your computer</li>
-        </ul>
-
-        <h2>Data Transmission</h2>
-        <p>When you use the Extension:</p>
-        <ol>
-            <li>Commands are received from the local MCP server via WebSocket</li>
-            <li>The Extension executes the requested action on the current web page</li>
-            <li>Results are sent back to the local MCP server</li>
-            <li>All communication uses localhost networking only</li>
-        </ol>
-
-        <h2>Data Storage</h2>
-        <p>The Extension stores:</p>
-        <ul>
-            <li>Your connection status (connected/disconnected)</li>
-            <li>A temporary session Tab ID for the current browser tab</li>
-            <li>Command history for the current session (cleared on disconnect)</li>
-        </ul>
-        <p>The only thing saved between browser sessions is the keepalive interval you choose in the DevTools panel. No browsing data, page content, or personal information is persisted.</p>
-
-        <h2>Permissions</h2>
-        <p>The Extension requires certain Chrome permissions:</p>
-        <ul>
-            <li><code>activeTab</code>: To work with the current tab when you connect it</li>
-            <li><code>debugger</code>: To perform input, navigation, screenshots, and console capture (and, only when you enable it, JavaScript execution) via the Chrome DevTools Protocol</li>
-            <li><code>storage</code>: To save a single setting, the keepalive interval you configure in the DevTools panel</li>
-            <li><code>&lt;all_urls&gt;</code>: To interact with any website you choose to automate</li>
-        </ul>
-        <p>These permissions are used solely for providing automation functionality and are never used for tracking or data collection.</p>
-
-        <h2>Security</h2>
-        <ul>
-            <li>All communication uses WebSocket protocol over localhost</li>
-            <li>No authentication tokens or passwords are stored</li>
-            <li>Each tab receives a unique session ID that expires on disconnect</li>
-        </ul>
-
-        <h2>User Control</h2>
-        <p>You have complete control:</p>
-        <ul>
-            <li>Connect/disconnect at any time via the DevTools panel</li>
-            <li>Close the DevTools panel to stop all Extension activity</li>
-            <li>Disable or uninstall the Extension at any time via Chrome settings</li>
-        </ul>
-
-        <h2>Children's Privacy</h2>
-        <p>This Extension is not directed at children under 13 and does not knowingly collect information from children.</p>
-
-        <h2>Changes to This Policy</h2>
-        <p>We may update this privacy policy from time to time. Any changes will be reflected in the "Last Updated" date above.</p>
-
-        <h2>Contact</h2>
-        <p>For questions about this privacy policy or the Extension, please visit: <a href="https://github.com/williamkapke/kapture">https://github.com/williamkapke/kapture</a></p>
-
-        <h2>Consent</h2>
-        <p>By using the Kapture Browser Automation Extension, you consent to this privacy policy.</p>
+    <div class="nav-cta">
+      <a class="btn btn-ghost btn-sm" href="https://github.com/williamkapke/kapture"><i data-lucide="github"></i> GitHub</a>
+      <a class="btn btn-primary btn-sm" href="https://to.kap.co/kapture-extension">Install</a>
     </div>
+  </div>
+</header>
 
-    <footer class="footer">
-        <div class="footer-links">
-            <a href="https://github.com/williamkapke/kapture">GitHub</a>
-            <a href="MCP_USAGE.html">Documentation</a>
-            <a href="https://github.com/williamkapke/kapture/issues">Issues</a>
-            <a href="https://github.com/williamkapke/kapture#contributing">Contribute</a>
-            <a href="privacy.html">Privacy Policy</a>
-        </div>
-        <div class="footer-bottom">
-            <p>Kapture is an independent open-source project focused on reliable browser automation for AI applications</p>
-        </div>
-    </footer>
+<main>
+<section class="page"><div class="wrap"><article class="doc">
+  <span class="eyebrow">Legal</span>
+  <h1>Privacy Policy</h1>
+  <p class="last-updated">Last updated: June 2026</p>
+
+  <p class="lead">Kapture Browser Automation ("the Extension") enables local browser automation through the Model Context Protocol (MCP). This policy explains how the Extension handles data.</p>
+
+  <h2>What we access</h2>
+  <p>The Extension may access, only when a command asks for it:</p>
+  <ul>
+    <li>Current tab URL and title</li>
+    <li>Page content (HTML/DOM)</li>
+    <li>Browser console logs</li>
+    <li>Screenshots of the current tab</li>
+    <li>Form field values while automating interactions</li>
+  </ul>
+
+  <div class="callout">
+    <h3>What we don't do</h3>
+    <ul>
+      <li>No personal information is collected or stored</li>
+      <li>No data is sent to external servers</li>
+      <li>No browsing history is tracked</li>
+      <li>No analytics or tracking services</li>
+      <li>Nothing is sold or shared</li>
+    </ul>
+  </div>
+
+  <h2>Local operation only</h2>
+  <ul>
+    <li>Communication happens only with localhost (127.0.0.1) on port 61822</li>
+    <li>Data is transmitted only to the MCP server running on your machine</li>
+    <li>No internet connection is required to operate</li>
+    <li>No data leaves your computer</li>
+  </ul>
+
+  <h2>Data storage</h2>
+  <p>During a session the Extension keeps your connection status, a temporary session Tab ID, and the current session's command history (cleared on disconnect). The only thing saved between browser sessions is the keepalive interval you choose in the DevTools panel. No browsing data, page content, or personal information is persisted.</p>
+
+  <h2>Permissions</h2>
+  <ul>
+    <li><code>activeTab</code> — to work with the current tab when you connect it</li>
+    <li><code>debugger</code> — to perform input, navigation, screenshots, and console capture (and, only when you enable it, JavaScript execution) via the Chrome DevTools Protocol</li>
+    <li><code>storage</code> — to save a single setting, the keepalive interval you configure in the DevTools panel</li>
+    <li><code>&lt;all_urls&gt;</code> — to interact with any website you choose to automate</li>
+  </ul>
+  <p>These permissions are used solely to provide automation functionality, never for tracking or data collection.</p>
+
+  <h2>Security</h2>
+  <ul>
+    <li>All communication uses the WebSocket protocol over localhost</li>
+    <li>No authentication tokens or passwords are stored</li>
+    <li>Each tab receives a unique session ID that expires on disconnect</li>
+  </ul>
+
+  <h2>User control</h2>
+  <p>You can connect or disconnect at any time from the DevTools panel, close the panel to stop all activity, or disable or uninstall the Extension whenever you like.</p>
+
+  <h2>Changes &amp; contact</h2>
+  <p>This policy may be updated from time to time; changes are reflected in the date above. Questions? Visit the project on <a href="https://github.com/williamkapke/kapture">GitHub</a>.</p>
+</article></div></section>
+</main>
+
+<footer class="divider">
+  <div class="wrap">
+    <div class="foot">
+      <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span> Kapture</a>
+      <div class="foot-links">
+        <a href="https://github.com/williamkapke/kapture"><i data-lucide="github" style="width:15px;height:15px;vertical-align:-2px"></i> GitHub</a>
+        <a href="MCP_USAGE.html">Documentation</a>
+        <a href="https://github.com/williamkapke/kapture/issues">Issues</a>
+        <a href="https://github.com/williamkapke/kapture#contributing">Contribute</a>
+        <a href="privacy.html">Privacy</a>
+      </div>
+    </div>
+    <p class="foot-note">Kapture is an independent, open-source project focused on reliable browser automation for AI applications.</p>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.456.0/dist/umd/lucide.min.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

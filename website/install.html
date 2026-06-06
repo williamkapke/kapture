@@ -1,259 +1,188 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="indigo" data-font="grotesk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Install Kapture - Chrome Extension Installation Guide</title>
-    <meta name="description" content="Step-by-step guide to install the Kapture Chrome Extension for browser automation with AI">
-    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
-    <link rel="alternate icon" type="image/png" href="assets/images/icon48.png">
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Install Kapture — Chrome Extension Installation Guide</title>
+<meta name="description" content="Step-by-step guide to install the Kapture Chrome Extension for browser automation with AI.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="alternate icon" type="image/png" href="assets/images/icon48.png">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .store-cta {
+    background: linear-gradient(160deg, oklch(25% 0.04 280), oklch(17% 0.03 285));
+    color: #fff; border-radius: var(--radius-lg); padding: clamp(32px, 5vw, 52px);
+    text-align: center; position: relative; overflow: hidden; margin-top: 30px;
+  }
+  .store-cta::before { content:""; position:absolute; inset:0; background: radial-gradient(500px 260px at 50% -10%, var(--accent), transparent 60%); opacity:.5; }
+  .store-cta > * { position: relative; }
+  .store-cta h2 { color:#fff; font-size: clamp(24px, 3vw, 34px); }
+  .store-cta p { color: oklch(85% 0.02 280); margin-top: 12px; }
+  .store-cta .btn { margin-top: 24px; }
+  .steps { display: grid; gap: 16px; margin-top: 26px; }
+  .step { display: grid; grid-template-columns: 44px 1fr; gap: 18px; align-items: start;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; }
+  .step .n { width: 44px; height: 44px; border-radius: 11px; display: grid; place-items: center;
+    font-family: var(--font-display); font-weight: 700; font-size: 18px;
+    background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff; }
+  .step h3 { margin: 4px 0 0; font-size: 19px; }
+  .step img { border-radius: var(--radius-sm); border: 1px solid var(--line); margin-top: 14px; }
+  .kbd { font-family: var(--font-mono); font-weight: 600; font-size: 13px; padding: 5px 11px;
+    border-radius: 7px; color:#fff; background: linear-gradient(120deg, var(--accent), var(--accent-2)); }
+</style>
 </head>
 <body>
-    <nav class="nav">
-        <div class="nav-content">
-            <a href="index.html" class="logo">
-                <img src="assets/logo.svg" alt="Kapture" style="height: 28px; width: auto; margin-right: 8px;">
-                <span>Kapture</span>
-            </a>
-            <ul class="nav-links">
-                <li><a href="install.html" class="active">Install</a></li>
-                <li><a href="how-to.html">How To</a></li>
-                <li><a href="privacy.html">Privacy</a></li>
-                <li><a href="https://github.com/williamkapke/kapture">GitHub</a></li>
-            </ul>
-        </div>
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><linearGradient id="kapGrad" x1="0" y1="0" x2="1" y2="1"><stop class="s0" offset="0"></stop><stop class="s1" offset="1"></stop></linearGradient></defs></svg>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span> Kapture</a>
+    <nav class="nav-links">
+      <a href="index.html#action">In Action</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#why">Why Kapture</a>
+      <a href="index.html#how">How it Works</a>
+      <a href="MCP_USAGE.html">Docs</a>
     </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost btn-sm" href="https://github.com/williamkapke/kapture"><i data-lucide="github"></i> GitHub</a>
+      <a class="btn btn-primary btn-sm" href="https://to.kap.co/kapture-extension">Install</a>
+    </div>
+  </div>
+</header>
 
-    <main class="install-container" style="min-height: calc(100vh - 200px);">
-        <div class="install-header">
-            <h1 class="gradient-text">Install The Kapture Browser Extension</h1>
-            <p class="subtitle"></p>
+<main>
+<section class="page"><div class="wrap"><article class="doc">
+  <span class="eyebrow">Installation</span>
+  <h1>Install the Kapture extension</h1>
+
+  <div id="browser-warning" class="callout" style="display:none; border-color: oklch(80% 0.09 25); background: oklch(96% 0.03 25)">
+    <p style="margin-top:0"><strong>Kapture needs a Chromium-based browser.</strong> Supported browsers include Chrome, Edge, Brave, Opera, and Vivaldi.</p>
+    <p style="margin-top:16px">
+      <a class="btn btn-primary btn-sm" href="https://www.google.com/chrome/" target="_blank" rel="noopener">Download Chrome</a>
+      <a class="btn btn-ghost btn-sm" href="https://www.microsoft.com/edge" target="_blank" rel="noopener" style="margin-left:6px">Download Edge</a>
+      <a class="btn btn-ghost btn-sm" href="https://brave.com/download/" target="_blank" rel="noopener" style="margin-left:6px">Download Brave</a>
+    </p>
+  </div>
+
+  <div class="store-cta chrome-store-section">
+    <h2>Install from the Chrome Web Store</h2>
+    <p>The easiest way to install Kapture — no developer mode required.</p>
+    <a class="btn btn-ghost" href="https://to.kap.co/kapture-extension" target="_blank" rel="noopener" style="background:#fff;color:var(--accent-ink)"><i data-lucide="chrome"></i> Add to Chrome</a>
+  </div>
+
+  <div class="alternative-install">
+    <h2>Manual installation</h2>
+    <div class="callout accent">
+      <p style="margin-top:0">Manual installation requires developer mode and may show occasional warnings about developer-mode extensions.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <span class="n">1</span>
+        <div>
+          <h3>Download the extension</h3>
+          <p>Clone or download the Kapture repository from <a href="https://github.com/williamkapke/kapture" target="_blank" rel="noopener">GitHub</a> to get the extension files.</p>
+          <p style="margin-top:14px">
+            <a id="download-latest" class="btn btn-primary btn-sm" href="https://github.com/williamkapke/kapture/releases/latest"><i data-lucide="download"></i> <span id="download-text">Download Latest Release</span></a>
+            <a class="btn btn-ghost btn-sm" href="https://github.com/williamkapke/kapture" target="_blank" rel="noopener" style="margin-left:6px"><i data-lucide="github"></i> View on GitHub</a>
+          </p>
         </div>
+      </div>
 
-        <div id="browser-warning" class="warning-box" style="display: none; background: #fef2f2; border-color: #fca5a5; margin-bottom: 60px;">
-            <p style="color: #dc2626;">
-                <span class="warning-icon">⚠️</span>
-                <span>Kapture requires a Chromium-based browser that supports Chrome extensions. Supported browsers include Chrome, Edge, Brave, Opera, and Vivaldi.</span>
-            </p>
-            <div class="button-group" style="margin-top: 20px;">
-                <a href="https://www.google.com/chrome/" class="btn btn-primary" target="_blank" rel="noopener">Download Chrome</a>
-                <a href="https://www.microsoft.com/edge" class="btn btn-secondary" target="_blank" rel="noopener">Download Edge</a>
-                <a href="https://brave.com/download/" class="btn btn-secondary" target="_blank" rel="noopener">Download Brave</a>
-            </div>
+      <div class="step">
+        <span class="n">2</span>
+        <div>
+          <h3>Load it into your browser</h3>
+          <ol style="margin-top:14px;padding-left:20px;display:grid;gap:8px">
+            <li>Open <code>chrome://extensions/</code> in your browser.</li>
+            <li>Enable <strong>Developer mode</strong> with the toggle in the top-right.</li>
+            <li>Click <strong>Load unpacked</strong> and select the extracted folder (download) or the <code>/extension</code> folder (cloned repo).</li>
+          </ol>
+          <img src="assets/images/extensions_dev_mode.png" alt="Developer mode and Load unpacked button" style="max-width:100%;height:auto">
         </div>
+      </div>
 
-        <div class="chrome-store-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 40px; margin-bottom: 60px; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
-            <h2 style="color: white; margin-top: 0; margin-bottom: 16px; font-size: 2rem; text-align: center;">
-                <span style="display: inline-flex; align-items: center; gap: 12px;">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
-                    Install from Chrome Web Store
-                </span>
-            </h2>
-            <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 24px; text-align: center; font-size: 1.1rem;">
-                The easiest way to install Kapture - no developer mode required!
-            </p>
-            <div style="text-align: center;">
-                <a href="https://to.kap.co/kapture-extension" class="btn" style="background: white; color: #667eea; font-size: 1.2rem; padding: 18px 40px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); hover: transform: scale(1.05);" target="_blank" rel="noopener">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 12px;"><path d="M12,20L15.46,14H15.45C15.79,13.4 16,12.73 16,12C16,10.8 15.46,9.73 14.62,9H19.41C19.79,9.93 20,10.94 20,12A8,8 0 0,1 12,20M4,12C4,10.54 4.39,9.18 5.07,8L8.54,14H8.55C9.24,15.19 10.5,16 12,16C12.45,16 12.88,15.91 13.29,15.77L10.89,19.91C6,19.21 4,16.05 4,12M15,12A3,3 0 0,1 12,15A3,3 0 0,1 9,12A3,3 0 0,1 12,9A3,3 0 0,1 15,12M12,4C14.96,4 17.54,5.61 18.92,8H12C10.06,8 8.45,9.38 8.08,11.21L5.7,7.08C7.16,5.21 9.44,4 12,4M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/></svg>
-                    Add to Chrome
-                </a>
-            </div>
+      <div class="step">
+        <span class="n">3</span>
+        <div>
+          <h3>Pin the extension</h3>
+          <p>Click the puzzle-piece icon in the toolbar, then the pin next to Kapture MCP Browser Automation.</p>
+          <img src="assets/images/kapture_pin.png" alt="Pin Kapture extension to toolbar" style="width:250px;max-width:100%;height:auto">
         </div>
+      </div>
+    </div>
+  </div>
 
-        <div class="alternative-install" style="position: relative;">
-            <h2 style="text-align: center; margin-bottom: 40px; color: #4a5568;">
-                <span style="font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: #9ca3af;">Alternative Method</span>
-                <br>
-                <span style="font-size: 1.5rem; margin-top: 8px; display: block;">Manual Installation</span>
-            </h2>
+  <div class="next-steps">
+    <h2>What's next?</h2>
+    <p>Verify it's working and learn how to use it with AI assistants.</p>
+    <div class="callout">
+      <h3 style="margin-top:0">Verify the install</h3>
+      <p>Open Chrome DevTools and look for the <strong>Kapture</strong> panel tab, alongside Elements, Console, and the rest.</p>
+      <p style="margin-top:16px">Windows / Linux <span class="kbd">F12</span> &nbsp; · &nbsp; macOS <span class="kbd">Cmd + Option + I</span></p>
+    </div>
+    <p style="margin-top:26px">
+      <a class="btn btn-primary" href="how-to.html"><i data-lucide="sparkles"></i> View the how-to guide</a>
+      <a class="btn btn-ghost" href="https://github.com/williamkapke/kapture" target="_blank" style="margin-left:8px"><i data-lucide="github"></i> GitHub repository</a>
+    </p>
+  </div>
+</article></div></section>
+</main>
 
-            <div class="warning-box" style="margin-bottom: 40px;">
-                <p>
-                    <span class="warning-icon">ℹ️</span>
-                    <span>Manual installation requires developer mode and may show occasional warnings about developer mode extensions.</span>
-                </p>
-            </div>
+<footer class="divider">
+  <div class="wrap">
+    <div class="foot">
+      <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span> Kapture</a>
+      <div class="foot-links">
+        <a href="https://github.com/williamkapke/kapture"><i data-lucide="github" style="width:15px;height:15px;vertical-align:-2px"></i> GitHub</a>
+        <a href="MCP_USAGE.html">Documentation</a>
+        <a href="https://github.com/williamkapke/kapture/issues">Issues</a>
+        <a href="https://github.com/williamkapke/kapture#contributing">Contribute</a>
+        <a href="privacy.html">Privacy</a>
+      </div>
+    </div>
+    <p class="foot-note">Kapture is an independent, open-source project focused on reliable browser automation for AI applications.</p>
+  </div>
+</footer>
 
-        <div class="install-steps">
-            <div class="step">
-                <div class="step-number">1</div>
-                <div class="step-content">
-                    <h3>Download the Extension</h3>
-                    <p>Clone or download the Kapture repository from <a href="https://github.com/williamkapke/kapture" target="_blank" rel="noopener">GitHub</a> to get the extension files.</p>
-                    <div class="button-group" style="margin-top: 12px;">
-                        <a id="download-latest" href="https://github.com/williamkapke/kapture/releases/latest" class="btn btn-primary" style="font-size: 0.95rem; padding: 10px 20px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/></svg>
-                            <span id="download-text">Download Latest Release</span>
-                        </a>
-                        <a href="https://github.com/williamkapke/kapture" class="btn btn-secondary" style="font-size: 0.95rem; padding: 10px 20px;" target="_blank" rel="noopener">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"/></svg>
-                            View on GitHub
-                        </a>
-                    </div>
-                </div>
-            </div>
+<script src="https://unpkg.com/lucide@0.456.0/dist/umd/lucide.min.js"></script>
+<script src="app.js"></script>
+<script>
+  // Browser detection — hide install paths on unsupported browsers.
+  (function() {
+    const ua = navigator.userAgent.toLowerCase();
+    const supported = (ua.includes('chrome') && !ua.includes('edg')) || ua.includes('edg/') ||
+      (navigator.brave && navigator.brave.isBrave) || ua.includes('opr/') || ua.includes('opera/') || ua.includes('vivaldi/');
+    if (!supported) {
+      const warn = document.getElementById('browser-warning');
+      if (warn) warn.style.display = 'block';
+      ['.chrome-store-section', '.alternative-install', '.next-steps'].forEach(sel => {
+        const el = document.querySelector(sel);
+        if (el) el.style.display = 'none';
+      });
+    }
+  })();
 
-            <div class="step">
-                <div class="step-number">2</div>
-                <div class="step-content">
-                    <h3>Install the Extension</h3>
-                    <p>Load the extension into Chrome with these steps:</p>
-
-                    <ol style="margin-top: 16px; padding-left: 20px; color: #4a5568;">
-                        <li style="margin-bottom: 12px;">
-                            Navigate to <code style="padding: 4px 8px; background: #f3f4f6; border-radius: 4px;">chrome://extensions/</code> in your browser
-                        </li>
-                        <li style="margin-bottom: 12px;">
-                            Enable <strong>Developer mode</strong> using the toggle in the top-right corner
-                        </li>
-                        <li style="margin-bottom: 12px;">
-                            Click <strong>"Load unpacked"</strong> and select:
-                            <ul style="margin-top: 8px; margin-left: 20px;">
-                                <li style="margin-bottom: 4px;">The extracted folder (if you downloaded the extension)</li>
-                                <li>The <code>/extension</code> folder (if you cloned the repo)</li>
-                            </ul>
-                        </li>
-                    </ol>
-
-                    <div style="margin-top: 16px; text-align: center;">
-                        <img src="assets/images/extensions_dev_mode.png" alt="Developer mode and Load unpacked button" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    </div>
-                </div>
-            </div>
-
-            <div class="step">
-                <div class="step-number">3</div>
-                <div class="step-content">
-                    <h3>Pin the Extension</h3>
-                    <p>For easy access, pin Kapture to your browser toolbar:</p>
-                    <div style="margin-top: 16px; text-align: center;">
-                        <img src="assets/images/kapture_pin.png" alt="Pin Kapture extension to toolbar" style="width: 250px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    </div>
-                    <p style="margin-top: 12px; color: #6b7280; font-size: 0.9rem;">Click the puzzle piece icon and then click the pin next to Kapture MCP Browser Automation.</p>
-                </div>
-            </div>
-        </div>
-        </div>
-
-        <div class="next-steps">
-            <h2>What's Next?</h2>
-            <p>Now that you have Kapture installed, verify it's working and learn how to use it with AI assistants.</p>
-
-            <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px; margin: 32px 0; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
-                <h3 style="margin-top: 0; margin-bottom: 20px; color: #1a202c; font-size: 1.5rem;">
-                    <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">✓</span>
-                    Verify Installation
-                </h3>
-                <p style="margin-bottom: 20px; color: #4a5568; font-size: 1.1rem;">Open Chrome DevTools and look for the "Kapture" panel tab:</p>
-
-                <div style="display: flex; flex-wrap: wrap; gap: 24px; margin-bottom: 24px; justify-content: center;">
-                    <div style="background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: 12px;">
-                        <span style="color: #4a5568; font-weight: 500;">Windows/Linux</span>
-                        <code style="padding: 6px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; font-weight: 600; font-size: 1rem;">F12</code>
-                    </div>
-                    <div style="background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: flex; align-items: center; gap: 12px;">
-                        <span style="color: #4a5568; font-weight: 500;">macOS</span>
-                        <code style="padding: 6px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; font-weight: 600; font-size: 1rem;">Cmd+Option+I</code>
-                    </div>
-                </div>
-
-                <p style="margin: 0; color: #6b7280; font-size: 0.95rem; text-align: center; font-style: italic;">
-                    The Kapture panel will appear as a new tab in DevTools alongside Elements, Console, etc.
-                </p>
-            </div>
-
-            <div class="button-group" style="margin-top: 40px;">
-                <a href="how-to.html" class="btn btn-primary" style="font-size: 1.1rem; padding: 18px 36px;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;"><path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M12,10A2,2 0 0,0 10,12A2,2 0 0,0 12,14A2,2 0 0,0 14,12A2,2 0 0,0 12,10Z"/></svg>
-                    View How-To Guide
-                </a>
-                <a href="https://github.com/williamkapke/kapture" class="btn btn-secondary" style="font-size: 1.1rem; padding: 18px 36px;" target="_blank">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;"><path d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"/></svg>
-                    GitHub Repository
-                </a>
-            </div>
-        </div>
-    </main>
-
-    <footer class="footer">
-        <p>&copy; 2024 Kapture. All rights reserved.</p>
-        <div class="footer-links">
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="https://github.com/williamkapke/kapture" target="_blank">GitHub</a>
-        </div>
-    </footer>
-
-    <script>
-        // Browser detection
-        (function() {
-            const userAgent = navigator.userAgent.toLowerCase();
-            const isChrome = userAgent.includes('chrome') && !userAgent.includes('edg');
-            const isEdge = userAgent.includes('edg/');
-            const isBrave = (navigator.brave && navigator.brave.isBrave) || false;
-            const isOpera = userAgent.includes('opr/') || userAgent.includes('opera/');
-            const isVivaldi = userAgent.includes('vivaldi/');
-
-            const isSupportedBrowser = isChrome || isEdge || isBrave || isOpera || isVivaldi;
-
-            if (!isSupportedBrowser) {
-                // Show browser warning
-                const warning = document.getElementById('browser-warning');
-                if (warning) {
-                    warning.style.display = 'block';
-                }
-
-                // Hide Chrome Web Store section
-                const chromeStore = document.querySelector('.chrome-store-section');
-                if (chromeStore) {
-                    chromeStore.style.display = 'none';
-                }
-
-                // Hide alternative installation section
-                const altInstall = document.querySelector('.alternative-install');
-                if (altInstall) {
-                    altInstall.style.display = 'none';
-                }
-
-                // Hide the "What's Next?" section
-                const nextSteps = document.querySelector('.next-steps');
-                if (nextSteps) {
-                    nextSteps.style.display = 'none';
-                }
-            }
-        })();
-
-        // Fetch latest release
-        (function() {
-            fetch('https://api.github.com/repos/williamkapke/kapture/releases/latest')
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.assets && data.assets.length > 0) {
-                        // Look for the kapture-extension zip file
-                        const extensionAsset = data.assets.find(asset =>
-                            asset.name.includes('kapture-extension') && asset.name.endsWith('.zip')
-                        );
-
-                        if (extensionAsset) {
-                            const downloadBtn = document.getElementById('download-latest');
-                            const downloadText = document.getElementById('download-text');
-                            if (downloadBtn) {
-                                downloadBtn.href = extensionAsset.browser_download_url;
-                                if (downloadText) {
-                                    // Extract version from filename like "kapture-extension-v0.13.0.zip"
-                                    const versionMatch = extensionAsset.name.match(/v\d+\.\d+\.\d+/);
-                                    const version = versionMatch ? versionMatch[0] : 'Latest';
-                                    downloadText.textContent = `Download ${version}`;
-                                }
-                            }
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Failed to fetch latest release:', error);
-                    // Fallback is already set in the HTML
-                });
-        })();
-    </script>
+  // Point the download button at the latest release asset.
+  (function() {
+    fetch('https://api.github.com/repos/williamkapke/kapture/releases/latest')
+      .then(r => r.json())
+      .then(data => {
+        const asset = data && data.assets && data.assets.find(a => a.name.includes('kapture-extension') && a.name.endsWith('.zip'));
+        if (asset) {
+          const btn = document.getElementById('download-latest');
+          const txt = document.getElementById('download-text');
+          if (btn) btn.href = asset.browser_download_url;
+          if (txt) { const m = asset.name.match(/v?\d+\.\d+\.\d+/); txt.textContent = 'Download ' + (m ? m[0] : 'Latest'); }
+        }
+      })
+      .catch(() => { /* fallback link already set */ });
+  })();
+</script>
 </body>
 </html>

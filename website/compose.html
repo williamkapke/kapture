@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="indigo" data-font="grotesk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>compose — Run a sequence of commands · Kapture</title>
+<meta name="description" content="The compose tool runs a sequence of Kapture commands against one tab in a single call. Format, eligible commands, behavior, and examples.">
+<meta property="og:title" content="compose — Run a sequence of commands · Kapture">
+<meta property="og:description" content="Run a whole sequence of browser commands in one call.">
+<meta property="og:url" content="https://williamkapke.github.io/kapture/compose.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="alternate icon" type="image/png" href="assets/images/icon48.png">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .cmd-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .cmd-chips code { font-family: var(--font-mono); font-size: 13px; padding: 5px 11px; border-radius: 8px;
+    background: var(--bg-2); border: 1px solid var(--line); color: var(--accent-ink); }
+  .cmd-chips code.new { background: var(--accent-wash); border-color: transparent; }
+  .ex { margin-top: 26px; }
+  .ex .ex-note { color: var(--ink-2); font-size: 15px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><linearGradient id="kapGrad" x1="0" y1="0" x2="1" y2="1"><stop class="s0" offset="0"></stop><stop class="s1" offset="1"></stop></linearGradient></defs></svg>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span> Kapture</a>
+    <nav class="nav-links">
+      <a href="index.html#action">In Action</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#why">Why Kapture</a>
+      <a href="index.html#how">How it Works</a>
+      <a href="MCP_USAGE.html">Docs</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost btn-sm" href="https://github.com/williamkapke/kapture"><i data-lucide="github"></i> GitHub</a>
+      <a class="btn btn-primary btn-sm" href="https://to.kap.co/kapture-extension">Install</a>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="page"><div class="wrap"><article class="doc">
+  <span class="eyebrow">Composite tool</span>
+  <h1><span class="mono" style="font-size:0.8em">compose</span> — many commands, one call</h1>
+  <p class="lead">Multi-step browser actions usually mean a round-trip per command. <strong>compose</strong> runs a whole sequence against one tab in a single call: one command per line, executed in order, stopping at the first failure.</p>
+
+  <h2>The format</h2>
+  <p>Each line is <code>&lt;tool&gt;?&lt;query-string&gt;</code> — a URL query string whose keys are exactly that tool's parameters. No new syntax to learn: serialize it with <code>URLSearchParams</code> (JS), <code>urlencode</code> (Python), or anything that speaks query strings.</p>
+
+  <pre><code>fill?selector=%23email&value=me%40example.com
+fill?selector=%23password&value=hunter2
+click?selector=%23login
+wait?t=500</code></pre>
+
+  <div class="callout accent">
+    <p style="margin-top:0"><strong>Encoding:</strong> only <code>&amp;</code>, <code>%</code>, and newlines (<code>%0A</code>) must be encoded in a value; spaces can be <code>+</code> or <code>%20</code>. An XPath's internal <code>=</code> is fine unencoded, since each pair only splits on its first <code>=</code>.</p>
+  </div>
+
+  <h2>Eligible commands</h2>
+  <p>The action commands, plus the compose-only <code>wait</code>:</p>
+  <div class="cmd-chips">
+    <code>navigate</code><code>back</code><code>forward</code><code>reload</code>
+    <code>click</code><code>hover</code><code>focus</code><code>blur</code>
+    <code>fill</code><code>type</code><code>insertText</code><code>clear</code><code>select</code><code>keypress</code><code>scroll</code>
+    <code class="new">wait?t=&lt;ms&gt;</code>
+  </div>
+  <p style="margin-top:18px">Data-returning commands (<code>screenshot</code>, <code>dom</code>, <code>elements</code>, <code>console_logs</code>…), lifecycle commands (<code>new_tab</code>, <code>close</code>, <code>show</code>), and <code>evaluate</code> are <strong>not</strong> eligible — they're meant to read a result or change the tab set, not advance a sequence.</p>
+
+  <h2>How it runs</h2>
+  <ul>
+    <li><strong>Validated up front.</strong> The whole script is checked first (known command, parseable query, valid args). If anything is wrong, <em>nothing runs</em> and you get the offending line.</li>
+    <li><strong>Stops at the first failure.</strong> If a command errors or can't find its element, the run halts there — later lines don't execute.</li>
+    <li><strong>Returns an array</strong> of the per-command responses, in order. On a failure, the last entry holds the error, and the array length tells you how far it got.</li>
+    <li><strong>Long batches stay alive.</strong> compose emits progress as it goes, so a script with <code>wait</code>s won't trip your client's request timeout.</li>
+  </ul>
+
+  <h2>Examples</h2>
+
+  <div class="ex">
+    <p class="ex-note">Search a site and submit:</p>
+    <pre><code>fill?selector=.search-box&value=browser+automation
+click?selector=button%5Btype%3D%22submit%22%5D</code></pre>
+  </div>
+
+  <div class="ex">
+    <p class="ex-note">Open a page, let it settle, scroll down, and type into a rich editor:</p>
+    <pre><code>navigate?url=https%3A%2F%2Fexample.com%2Fdoc
+wait?t=800
+scroll?y=600
+type?selector=.editor&text=Drafting+from+an+AI+agent.</code></pre>
+  </div>
+
+  <div class="ex">
+    <p class="ex-note">Replace a field's contents (clear, then type) and move focus on:</p>
+    <pre><code>clear?selector=%23title
+type?selector=%23title&text=Q3+roadmap
+keypress?key=Tab</code></pre>
+  </div>
+
+  <h2>Calling it</h2>
+  <p>Over MCP, call the <code>compose</code> tool with <code>tabId</code> and <code>script</code>. Over HTTP, POST the same script:</p>
+  <pre><code>curl -X POST http://localhost:61822/tab/{tabId}/compose \
+  -H 'Content-Type: application/json' \
+  -d '{"script":"fill?selector=%23q&value=hi\nclick?selector=%23go"}'</code></pre>
+
+  <p style="margin-top:32px">
+    <a class="btn btn-primary" href="MCP_USAGE.html"><i data-lucide="book-open"></i> Full MCP docs</a>
+    <a class="btn btn-ghost" href="how-to.html" style="margin-left:8px"><i data-lucide="sparkles"></i> More examples</a>
+  </p>
+</article></div></section>
+</main>
+
+<footer class="divider">
+  <div class="wrap">
+    <div class="foot">
+      <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span> Kapture</a>
+      <div class="foot-links">
+        <a href="https://github.com/williamkapke/kapture"><i data-lucide="github" style="width:15px;height:15px;vertical-align:-2px"></i> GitHub</a>
+        <a href="MCP_USAGE.html">Documentation</a>
+        <a href="https://github.com/williamkapke/kapture/issues">Issues</a>
+        <a href="https://github.com/williamkapke/kapture#contributing">Contribute</a>
+        <a href="privacy.html">Privacy</a>
+      </div>
+    </div>
+    <p class="foot-note">Kapture is an independent, open-source project focused on reliable browser automation for AI applications.</p>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.456.0/dist/umd/lucide.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

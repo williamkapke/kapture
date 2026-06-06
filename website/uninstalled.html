@@ -1,111 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="indigo" data-font="grotesk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kapture Uninstalled</title>
-    <meta name="description" content="Kapture has been uninstalled. Everything ran locally and nothing is left behind.">
-    <meta property="og:title" content="Kapture Uninstalled">
-    <meta property="og:description" content="Kapture has been uninstalled. Everything ran locally and nothing is left behind.">
-    <meta property="og:url" content="https://williamkapke.github.io/kapture/uninstalled.html">
-    <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
-    <link rel="alternate icon" type="image/png" href="assets/images/icon48.png">
-    <link rel="stylesheet" href="styles.css">
-    <style>
-        .uninstall-wrap {
-            min-height: calc(100vh - 80px);
-            margin-top: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 60px 20px;
-            background: linear-gradient(to bottom, #f7fafc, #ffffff);
-        }
-        .uninstall-card {
-            max-width: 560px;
-            width: 100%;
-            text-align: center;
-        }
-        .uninstall-card h1 {
-            font-size: 2.6rem;
-            font-weight: 800;
-            line-height: 1.15;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 18px;
-        }
-        .uninstall-card .lead {
-            font-size: 1.15rem;
-            color: #4a5568;
-            margin-bottom: 36px;
-        }
-        .feedback-box {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 6px 24px rgba(45, 55, 72, 0.06);
-            margin-bottom: 32px;
-            text-align: left;
-        }
-        .feedback-box h2 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #1a202c;
-            margin-bottom: 8px;
-        }
-        .feedback-box p {
-            color: #4a5568;
-            line-height: 1.65;
-            margin-bottom: 20px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kapture Uninstalled</title>
+<meta name="description" content="Kapture has been uninstalled. Everything ran locally and nothing is left behind.">
+<meta property="og:title" content="Kapture Uninstalled">
+<meta property="og:url" content="https://williamkapke.github.io/kapture/uninstalled.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link rel="alternate icon" type="image/png" href="assets/images/icon48.png">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <nav class="nav">
-        <div class="nav-content">
-            <a href="index.html" class="logo">
-                <span>Kapture</span>
-            </a>
-            <ul class="nav-links">
-                <li><a href="index.html#how-it-works">How it Works</a></li>
-                <li><a href="index.html#tools">Tools</a></li>
-                <li><a href="MCP_USAGE.html">Docs</a></li>
-                <li><a href="https://github.com/williamkapke/kapture">GitHub</a></li>
-            </ul>
-        </div>
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><linearGradient id="kapGrad" x1="0" y1="0" x2="1" y2="1"><stop class="s0" offset="0"></stop><stop class="s1" offset="1"></stop></linearGradient></defs></svg>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span> Kapture</a>
+    <nav class="nav-links">
+      <a href="index.html#action">In Action</a>
+      <a href="index.html#tools">Tools</a>
+      <a href="index.html#why">Why Kapture</a>
+      <a href="index.html#how">How it Works</a>
+      <a href="MCP_USAGE.html">Docs</a>
     </nav>
-
-    <div class="uninstall-wrap">
-        <div class="uninstall-card">
-            <h1>Kapture has been uninstalled</h1>
-            <p class="lead">Thanks for giving it a try. Everything ran locally on your machine, so no data was collected and nothing is left behind.</p>
-
-            <div class="feedback-box">
-                <h2>Mind telling us why?</h2>
-                <p>If something didn't work or was missing, a short note genuinely helps shape what comes next.</p>
-                <a href="https://github.com/williamkapke/kapture/issues/new" class="btn btn-primary">Leave feedback</a>
-            </div>
-
-            <div class="button-group">
-                <a href="install.html" class="btn btn-secondary">Reinstall Kapture</a>
-            </div>
-        </div>
+    <div class="nav-cta">
+      <a class="btn btn-ghost btn-sm" href="https://github.com/williamkapke/kapture"><i data-lucide="github"></i> GitHub</a>
+      <a class="btn btn-primary btn-sm" href="https://to.kap.co/kapture-extension">Install</a>
     </div>
+  </div>
+</header>
 
-    <footer class="footer">
-        <div class="footer-links">
-            <a href="https://github.com/williamkapke/kapture">GitHub</a>
-            <a href="MCP_USAGE.html">Documentation</a>
-            <a href="https://github.com/williamkapke/kapture/issues">Issues</a>
-            <a href="https://github.com/williamkapke/kapture#contributing">Contribute</a>
-            <a href="privacy.html">Privacy Policy</a>
-        </div>
-        <div class="footer-bottom">
-            <p>Kapture is an independent open-source project focused on reliable browser automation for AI applications</p>
-        </div>
-    </footer>
+<main>
+<section class="page"><div class="wrap"><article class="doc" style="text-align:center">
+  <h1>Kapture has been uninstalled</h1>
+  <p class="lead" style="margin-left:auto;margin-right:auto;max-width:52ch">Thanks for giving it a try. Everything ran locally on your machine, so no data was collected and nothing is left behind.</p>
+
+  <div class="callout" style="text-align:left;max-width:520px;margin-left:auto;margin-right:auto">
+    <h3>Mind telling us why?</h3>
+    <p>If something didn't work or was missing, a short note genuinely helps shape what comes next.</p>
+    <p style="margin-top:18px"><a class="btn btn-primary" href="https://github.com/williamkapke/kapture/issues/new"><i data-lucide="message-square"></i> Leave feedback</a></p>
+  </div>
+
+  <p style="margin-top:28px"><a class="btn btn-ghost" href="install.html"><i data-lucide="rotate-ccw"></i> Reinstall Kapture</a></p>
+</article></div></section>
+</main>
+
+<footer class="divider">
+  <div class="wrap">
+    <div class="foot">
+      <a class="brand" href="index.html"><span class="logo" aria-hidden="true"></span> Kapture</a>
+      <div class="foot-links">
+        <a href="https://github.com/williamkapke/kapture"><i data-lucide="github" style="width:15px;height:15px;vertical-align:-2px"></i> GitHub</a>
+        <a href="MCP_USAGE.html">Documentation</a>
+        <a href="https://github.com/williamkapke/kapture/issues">Issues</a>
+        <a href="https://github.com/williamkapke/kapture#contributing">Contribute</a>
+        <a href="privacy.html">Privacy</a>
+      </div>
+    </div>
+    <p class="foot-note">Kapture is an independent, open-source project focused on reliable browser automation for AI applications.</p>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/lucide@0.456.0/dist/umd/lucide.min.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
