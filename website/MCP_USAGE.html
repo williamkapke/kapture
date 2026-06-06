@@ -450,7 +450,7 @@ graph LR
 
         <h2 id="available-tools">Available Tools</h2>
 
-        <p>Kapture provides 27 tools organized into functional categories:</p>
+        <p>Kapture provides 28 tools organized into functional categories:</p>
 
         <h3>Navigation Tools</h3>
 
@@ -667,6 +667,23 @@ graph LR
   x: 500,
   y: 300
 }</code></pre>
+            </div>
+        </div>
+
+        <h3>Composite</h3>
+
+        <div class="tool-grid">
+            <div class="tool-card">
+                <h4>compose</h4>
+                <p>Run a sequence of commands against one tab in a single call. The script is one command per line as <code>&lt;tool&gt;?&lt;query-string&gt;</code> — a URL query string whose keys are that tool's parameters — plus <code>wait?t=&lt;ms&gt;</code> to pause. The whole script is validated first (an invalid script runs nothing), then commands run in order and <strong>stop at the first failure</strong>. Returns an array of the per-command responses in order.</p>
+                <pre><code>{
+  tabId: "tab_1234567890",
+  script: "fill?selector=%23email&value=a%40b.com\n" +
+          "click?selector=%23submit\n" +
+          "wait?t=500\n" +
+          "scroll?y=0"
+}</code></pre>
+                <p>Eligible: navigate, back, forward, reload, click, hover, focus, blur, fill, type, insertText, clear, select, keypress, scroll, wait. Data-returning (screenshot, dom, elements…), lifecycle (new_tab, close, show), and evaluate are not eligible.</p>
             </div>
         </div>
 

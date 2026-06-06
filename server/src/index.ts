@@ -77,7 +77,7 @@ const mcpServerManager = new MCPServerManager(
 const HTTP_TAB_COMMANDS = new Set([
   'navigate', 'back', 'forward', 'reload', 'show',
   'click', 'hover', 'focus', 'blur', 'fill', 'select', 'keypress', 'scroll',
-  'type', 'insertText', 'clear', 'evaluate'
+  'type', 'insertText', 'clear', 'evaluate', 'compose'
 ]);
 
 function readJsonBody(req: import('http').IncomingMessage): Promise<any> {

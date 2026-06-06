@@ -373,6 +373,27 @@ tools:
         minimum: 1000
         maximum: 60000
 
+  compose:
+    description: >-
+      Run a sequence of commands against a single tab in one call. The script is
+      one command per line in the form `<tool>?<query-string>` - a URL query
+      string whose keys are that tool's parameters (e.g.
+      `fill?selector=%23email&value=a%40b.com`). Commands run in order and stop
+      at the first failure (a command erroring or not finding its element). The
+      whole script is validated first, so an invalid script runs nothing.
+      Returns an array of the per-command responses in order; on failure the
+      last entry holds the error. Eligible commands: navigate, back, forward,
+      reload, click, hover, focus, blur, fill, type, insertText, clear, select,
+      keypress, scroll - plus `wait?t=<ms>` to pause between steps. Data-returning
+      (screenshot, dom, elements, etc.), lifecycle (new_tab, close, show), and
+      evaluate commands are not eligible.
+    required: [tabId, script]
+    properties:
+      tabId: *tabId
+      script:
+        type: string
+        description: One command per line, each as `<tool>?<query-string>`
+
   new_tab:
     description: >-
       Opens a new browser tab with the Kapture MCP usage documentation page. 

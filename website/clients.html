@@ -329,6 +329,10 @@
       { group: 'Inspection', name: 'console', method: 'GET', path: '/console', desc: 'Get console logs (newest first)',
         fields: [{ name: 'level', options: ['', 'log', 'info', 'warn', 'error'] }, { name: 'limit', type: 'number', placeholder: '100' }, { name: 'before', placeholder: 'timestamp' }] },
 
+      // Compose
+      { group: 'Compose', name: 'compose', method: 'POST', path: '/compose', desc: 'Run a sequence of commands (one per line: tool?query). Stops on first failure.',
+        fields: [{ name: 'script', multiline: true, required: true, placeholder: 'fill?selector=%23q&value=hello\nclick?selector=%23submit\nwait?t=300' }] },
+
       // Tab management
       { group: 'Tab Management', name: 'close', method: 'DELETE', path: '', desc: 'Close this tab', confirm: true, fields: [] }
     ];
@@ -529,6 +533,12 @@
         const input = field.options
           ? el('select', { dataset: { field: field.name } },
               field.options.map(opt => el('option', { value: opt, textContent: opt || '(default)' })))
+          : field.multiline
+          ? el('textarea', {
+              placeholder: field.placeholder || '',
+              rows: 5,
+              dataset: { field: field.name, type: field.type || 'string' }
+            })
           : el('input', {
               placeholder: field.placeholder || '',
               dataset: { field: field.name, type: field.type || 'string' }

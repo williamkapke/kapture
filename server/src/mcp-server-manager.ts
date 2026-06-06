@@ -276,7 +276,20 @@ export class MCPServerManager {
     // Call tool handler
     server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args } = request.params;
-      return this.toolHandler.callTool(name, args);
+
+      // If the client supplied a progressToken, relay progress for long-running
+      // tools (compose) so it can reset its request timeout instead of giving up.
+      const progressToken = (request.params as any)._meta?.progressToken;
+      const onProgress = progressToken !== undefined
+        ? (progress: number, total: number) => {
+            server.notification({
+              method: 'notifications/progress',
+              params: { progressToken, progress, total }
+            }).catch(() => { /* notification is best-effort */ });
+          }
+        : undefined;
+
+      return this.toolHandler.callTool(name, args, onProgress);
     });
 
     // List resources handler

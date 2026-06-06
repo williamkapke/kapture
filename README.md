@@ -197,6 +197,7 @@ Then ask Claude to interact with web pages:
 - `console_logs` - Get the tab's console contents (console messages, uncaught exceptions, browser-generated entries)
 - `watch_console` - Watch the console in real time for a required timeout (ms), then return everything logged during the window
 - `evaluate` - Execute JavaScript in the page and return the result. Off by default: only available after enabling the "Allow JS execution" toggle in the extension popup or DevTools panel for a connected tab. The grant resets on disconnect.
+- `compose` - Run a sequence of commands against one tab in a single call. Script is one command per line as `<tool>?<query-string>` (plus `wait?t=<ms>`); runs in order, stops on first failure, returns an array of per-command responses.
 
 **Note on Selectors**: Tools that accept a `selector` parameter (`click`, `hover`, `fill`, `type`, `insertText`, `clear`, `select`, `keypress`, `scroll`, `screenshot`, `dom`) will only operate on the **first element** that matches the CSS selector. The tool response includes the unique selector of the actual element that was used, which may include an auto-generated ID if the element didn't have one.
 
