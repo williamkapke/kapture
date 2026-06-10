@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { framework } from '../test-framework.js';
-import { expectValidTabInfo } from './helpers.js';
+import { expectValidTabInfo, delay } from './helpers.js';
 
 describe('Keypress Tool Tests', function() {
   beforeEach(async function() {
@@ -68,6 +68,29 @@ describe('Keypress Tool Tests', function() {
     expectValidTabInfo(resultData);
     expect(resultData).to.have.property('keyPressed').that.equals(true);
     expect(resultData).to.have.property('key').that.equals('Enter');
+  });
+
+  it('should submit a form with Enter (implicit form submission)', async function() {
+    // Enter must carry the char event (text '\r') for the browser to run
+    // implicit form submission - #test-form GETs test.html?formval=...
+    await framework.callToolAndParse('fill', {
+      selector: '#form-input',
+      value: 'enter-submit'
+    });
+
+    // The submission navigates the page, which can race the keypress
+    // response's tab-info fetch - the outcome below is what matters.
+    await framework.callTool('keypress', {
+      key: 'Enter',
+      selector: '#form-input'
+    }).catch(() => {});
+
+    await delay(750); // let the form navigation complete
+
+    const elementData = await framework.callToolAndParse('elements', {
+      selector: 'body'
+    });
+    expect(elementData.url).to.include('formval=enter-submit');
   });
 
   it('should handle special keys - Tab', async function() {

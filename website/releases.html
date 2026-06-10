@@ -53,6 +53,12 @@
     <p style="margin-top:14px"><a class="btn btn-ghost btn-sm" href="MCP_USAGE.html#available-tools"><i data-lucide="arrow-right"></i> Read the docs</a></p>
   </div>
 
+  <h2>Fixes &amp; polish</h2>
+  <ul>
+    <li><strong>Input now works on background tabs.</strong> Clicks and keystrokes used to vanish silently when the target tab wasn't in front; the page is now told it's focused for the duration of the event, and responses include a warning when the tab is hidden.</li>
+    <li><strong>Enter submits forms.</strong> <code>keypress</code> Enter now carries the character event browsers use for implicit form submission.</li>
+  </ul>
+
   <h2 style="margin-top:52px">Version 1.0</h2>
   <p class="lead" style="font-size:inherit">Earlier, v1.0 added the most-requested controls: running JavaScript, typing the way a person does, scrolling, and batching commands.</p>
 

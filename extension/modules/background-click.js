@@ -1,5 +1,5 @@
 // Import helper functions from background-commands
-import { getFromContentScript, respondWith, respondWithError, attachDebugger, getElement } from './background-commands.js';
+import { getFromContentScript, respondWithError, respondWithInputWarning, attachDebuggerFocused, getElement } from './background-commands.js';
 
 export async function click({tabId, mousePosition}, { selector, xpath }) {
   return await hover({ tabId, mousePosition }, { selector, xpath }, true);
@@ -34,7 +34,7 @@ export async function hover(tab, { selector, xpath }, click = false) {
     const pixelsPerSecond = 1000; // Adjust for desired speed
     const frameInterval = 16; // ~60fps
 
-    await attachDebugger(tabId, async () => {
+    await attachDebuggerFocused(tabId, async () => {
       const sendCmd = (cmd, params) => chrome.debugger.sendCommand({ tabId }, cmd, params);
       const dispatchMouseEvent = (params) => sendCmd('Input.dispatchMouseEvent', params);
 
@@ -117,7 +117,7 @@ export async function hover(tab, { selector, xpath }, click = false) {
       await getFromContentScript(tabId, '_cursor', { show: false });
     }, 1000);
 
-    return respondWith(tabId, click ? { clicked: true } : { hovered: true }, selector, xpath);
+    return respondWithInputWarning(tabId, click ? { clicked: true } : { hovered: true }, selector, xpath);
   } catch (error) {
     // Make sure cursor is hidden on error
     await getFromContentScript(tabId, '_cursor', { show: false });

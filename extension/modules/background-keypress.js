@@ -1,5 +1,5 @@
 // Import helper functions from background-commands
-import { getFromContentScript, respondWith, respondWithError, attachDebugger } from './background-commands.js';
+import { getFromContentScript, respondWithError, respondWithInputWarning, attachDebuggerFocused } from './background-commands.js';
 
 // Additional helper functions
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -27,8 +27,8 @@ export async function keypress({tabId}, params) {
     // Parse key combination to extract key and modifiers
     const keyData = parseKeyCombination(key);
 
-    // Use attachDebugger helper to manage debugger lifecycle
-    return await attachDebugger(tabId, async () => {
+    // Use attachDebuggerFocused so key events reach hidden tabs too
+    const resultData = await attachDebuggerFocused(tabId, async () => {
       // Helper function to send key event
       const sendKeyEvent = async (type, autoRepeat = false, text = null) => {
         const eventData = {
@@ -90,7 +90,7 @@ export async function keypress({tabId}, params) {
       }
 
       // Get result including element info if selector was provided
-      const resultData = {
+      const data = {
         keyPressed: true,
         key: key,
         delay: keypressDelay
@@ -98,12 +98,16 @@ export async function keypress({tabId}, params) {
 
       // If this was an auto-repeat key press, include that info
       if (keypressDelay > 500) {
-        resultData.autoRepeat = true;
-        resultData.repeatCount = Math.floor((keypressDelay - 100) / 30);
+        data.autoRepeat = true;
+        data.repeatCount = Math.floor((keypressDelay - 100) / 30);
       }
 
-      return await respondWith(tabId, resultData, selector, xpath);
+      return data;
     });
+
+    // Respond outside the focused scope - focus emulation makes a hidden page
+    // report itself visible, which would suppress the hidden-tab warning.
+    return await respondWithInputWarning(tabId, resultData, selector, xpath);
   } catch (error) {
     return respondWithError(tabId, 'KEYPRESS_FAILED', error.message, selector, xpath);
   }
@@ -124,8 +128,8 @@ function parseKeyCombination(keyCombination) {
 
   // Special key mappings
   const KEY_MAPPINGS = {
-    'enter': { key: 'Enter', code: 'Enter', keyCode: 13 },
-    'return': { key: 'Enter', code: 'Enter', keyCode: 13 },
+    'enter': { key: 'Enter', code: 'Enter', keyCode: 13, text: '\r' },
+    'return': { key: 'Enter', code: 'Enter', keyCode: 13, text: '\r' },
     'tab': { key: 'Tab', code: 'Tab', keyCode: 9 },
     'delete': { key: 'Delete', code: 'Delete', keyCode: 46 },
     'backspace': { key: 'Backspace', code: 'Backspace', keyCode: 8 },

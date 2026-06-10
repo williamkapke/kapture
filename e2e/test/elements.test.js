@@ -104,9 +104,14 @@ describe('Elements Tool Tests', function() {
 
     const resultData = JSON.parse(result.content[0].text);
     expectValidTabInfo(resultData);
-    expect(resultData.elements).to.have.lengthOf(1);
-    expect(resultData.elements[0]).to.have.property('tagName').that.equals('input');
-    expect(resultData.elements[0]).to.have.property('id').that.equals('text-input');
+    // #text-input plus the #form-input inside the Enter-submit test form
+    expect(resultData.elements).to.have.lengthOf(2);
+    const ids = resultData.elements.map(e => e.id);
+    expect(ids).to.include('text-input');
+    expect(ids).to.include('form-input');
+    for (const element of resultData.elements) {
+      expect(element).to.have.property('tagName').that.equals('input');
+    }
   });
 
   it('should handle complex XPath expressions', async function() {

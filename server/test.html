@@ -259,6 +259,15 @@
                     <input type="password" id="password-input" placeholder="Password" style="width: 100%; box-sizing: border-box;">
                 </div>
 
+                <!-- Self-contained form: Enter in #form-input must trigger implicit
+                     form submission (a GET navigation to test.html?formval=...).
+                     Kept separate so the formless inputs above don't navigate on Enter. -->
+                <form id="test-form" action="test.html" style="margin: 10px 0;">
+                    <label for="form-input">Form Input (Enter submits):</label>
+                    <input type="text" id="form-input" name="formval" placeholder="Enter submits this form" style="width: 100%; box-sizing: border-box;">
+                    <button type="submit" id="form-submit">Submit Form</button>
+                </form>
+
                 <div style="margin: 10px 0;">
                     <label for="select-input">Select:</label>
                     <select id="select-input" style="width: 100%; box-sizing: border-box;">

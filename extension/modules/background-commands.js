@@ -110,6 +110,40 @@ export async function attachDebugger(tabId, action) {
   }
 }
 
+// attachDebugger for input dispatch (click, keypress, type, ...). A hidden
+// (background) tab believes it is unfocused, so the renderer won't deliver
+// synthesized key events to the focused element and processes mouse events
+// unreliably - focus emulation makes the page act focused without stealing
+// the user's real focus. Scoped to the action (not the whole session) so a
+// long-lived attachment like network monitoring doesn't leave a hidden page
+// permanently believing it's focused.
+export async function attachDebuggerFocused(tabId, action) {
+  return attachDebugger(tabId, async () => {
+    try {
+      await chrome.debugger.sendCommand({ tabId }, 'Emulation.setFocusEmulationEnabled', { enabled: true });
+    } catch (e) { /* best effort */ }
+    try {
+      return await action();
+    } finally {
+      try {
+        await chrome.debugger.sendCommand({ tabId }, 'Emulation.setFocusEmulationEnabled', { enabled: false });
+      } catch (e) { /* session may already be gone */ }
+    }
+  });
+}
+
+// Response wrapper for input commands: input dispatched to a hidden tab is
+// best-effort even with focus emulation, and the CDP dispatch "succeeding"
+// doesn't prove the page reacted - so say so instead of silently reporting
+// success.
+export const respondWithInputWarning = async (tabId, obj, selector, xpath) => {
+  const res = await respondWith(tabId, obj, selector, xpath);
+  if (res.pageVisibility && res.pageVisibility.visible === false) {
+    res.warning = 'This tab is hidden (not the active tab). Input events may not be delivered to a hidden tab - if this command had no effect, bring the tab to the front with `show` and retry.';
+  }
+  return res;
+};
+
 
 export const backgroundCommands = {
   navigate,

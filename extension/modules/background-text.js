@@ -3,7 +3,7 @@
 //   - type:       send a string as individual keystrokes (keydown/input/keyup per char)
 //   - insertText: insert a whole string at once (fires input/beforeinput, no key events)
 //   - clear:      select-all + Backspace as real key events
-import { getFromContentScript, respondWith, respondWithError, attachDebugger } from './background-commands.js';
+import { getFromContentScript, respondWithError, respondWithInputWarning, attachDebuggerFocused } from './background-commands.js';
 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -58,7 +58,7 @@ export async function type({ tabId }, { text, selector, xpath, delay = 0 }) {
     const focusError = await focusTarget(tabId, selector, xpath);
     if (focusError) return focusError;
 
-    return await attachDebugger(tabId, async () => {
+    await attachDebuggerFocused(tabId, async () => {
       // Let focus and the debugger attach settle so the first keystroke isn't
       // dropped by the input pipeline.
       await wait(40);
@@ -68,8 +68,10 @@ export async function type({ tabId }, { text, selector, xpath, delay = 0 }) {
         await dispatchKey(tabId, 'keyUp', info);
         if (keyDelay) await wait(keyDelay);
       }
-      return await respondWith(tabId, { typed: true, length: text.length }, selector, xpath);
     });
+    // Respond outside the focused scope - focus emulation makes a hidden page
+    // report itself visible, which would suppress the hidden-tab warning.
+    return await respondWithInputWarning(tabId, { typed: true, length: text.length }, selector, xpath);
   } catch (error) {
     return respondWithError(tabId, 'TYPE_FAILED', error.message, selector, xpath);
   }
@@ -85,10 +87,10 @@ export async function insertText({ tabId }, { text, selector, xpath }) {
     const focusError = await focusTarget(tabId, selector, xpath);
     if (focusError) return focusError;
 
-    return await attachDebugger(tabId, async () => {
+    await attachDebuggerFocused(tabId, async () => {
       await chrome.debugger.sendCommand({ tabId }, 'Input.insertText', { text });
-      return await respondWith(tabId, { inserted: true, length: text.length }, selector, xpath);
     });
+    return await respondWithInputWarning(tabId, { inserted: true, length: text.length }, selector, xpath);
   } catch (error) {
     return respondWithError(tabId, 'INSERT_TEXT_FAILED', error.message, selector, xpath);
   }
@@ -103,13 +105,13 @@ export async function clear({ tabId }, { selector, xpath }) {
     const selected = await getFromContentScript(tabId, '_selectAll', { selector, xpath });
     if (selected.error) return selected;
 
-    return await attachDebugger(tabId, async () => {
+    await attachDebuggerFocused(tabId, async () => {
       await wait(20);
       const backspace = { key: 'Backspace', code: 'Backspace', keyCode: 8 };
       await dispatchKey(tabId, 'keyDown', backspace);
       await dispatchKey(tabId, 'keyUp', backspace);
-      return await respondWith(tabId, { cleared: true }, selector, xpath);
     });
+    return await respondWithInputWarning(tabId, { cleared: true }, selector, xpath);
   } catch (error) {
     return respondWithError(tabId, 'CLEAR_FAILED', error.message, selector, xpath);
   }
