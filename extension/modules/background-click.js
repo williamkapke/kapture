@@ -31,7 +31,8 @@ export async function hover(tab, { selector, xpath }, click = false) {
     await getFromContentScript(tabId, '_moveMouseSVG', { x: currentPosition.x, y: currentPosition.y });
 
     // Animation configuration
-    const pixelsPerSecond = 1000; // Adjust for desired speed
+    const pixelsPerSecond = 4000; // Adjust for desired speed
+    const maxDuration = 400; // Cap so long moves stay snappy
     const frameInterval = 16; // ~60fps
 
     await attachDebuggerFocused(tabId, async () => {
@@ -44,17 +45,18 @@ export async function hover(tab, { selector, xpath }, click = false) {
       // Function to animate to a position
       const animateToPosition = async (fromX, fromY, toX, toY) => {
         const distance = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
-        const duration = Math.min(1000, (distance / pixelsPerSecond) * 1000);
+        const duration = Math.min(maxDuration, (distance / pixelsPerSecond) * 1000);
         const animSteps = Math.max(1, Math.ceil(duration / frameInterval));
         const dx = (toX - fromX) / animSteps;
         const dy = (toY - fromY) / animSteps;
 
+        // Glide the visual cursor there in one CSS transition; step only the
+        // CDP mouse events so pages still see movement along the path.
+        await getFromContentScript(tabId, '_moveMouseSVG', { x: toX, y: toY, duration });
+
         for (let i = 1; i <= animSteps; i++) {
           const x = fromX + (dx * i);
           const y = fromY + (dy * i);
-
-          // Move visual cursor
-          await getFromContentScript(tabId, '_moveMouseSVG', { x, y });
 
           // Send mouse move event
           await dispatchMouseEvent({ type: 'mouseMoved', x, y });

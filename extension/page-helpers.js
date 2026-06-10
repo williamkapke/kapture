@@ -606,6 +606,7 @@ const helpers = {
           transform: translate(-2px, -2px);
           transition: none;
           will-change: transform;
+          filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.9)) drop-shadow(0 0 10px rgba(139, 92, 246, 0.5));
         `;
 
         document.body.appendChild(cursor);
@@ -617,7 +618,7 @@ const helpers = {
       return respondWithError('CURSOR_ERROR', e.message);
     }
   },
-  _moveMouseSVG: ({x, y}) => {
+  _moveMouseSVG: ({x, y, duration}) => {
     if (typeof x !== 'number' || typeof y !== 'number') {
       return respondWithError('XY_REQUIRED', 'Both x and y coordinates are required');
     }
@@ -628,6 +629,10 @@ const helpers = {
         return respondWithError('CURSOR_NOT_FOUND', 'Cursor element not found. Call _cursor with show=true first');
       }
 
+      // Glide via CSS transition when a duration is given; snap otherwise
+      cursor.style.transition = duration > 0
+        ? `transform ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`
+        : 'none';
       cursor.style.transform = `translate(${x - 2}px, ${y - 2}px)`;
       return respondWith({ moved: true, x, y });
     } catch (e) {
