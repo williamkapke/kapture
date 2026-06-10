@@ -1,20 +1,5 @@
 // DevTools Panel UI with Real Connection and Data
 
-// Debug what you're actually getting
-console.log('inspectedWindow.tabId:', chrome.devtools.inspectedWindow.tabId);
-
-// Let's also check what chrome.tabs.query gives us for comparison
-chrome.tabs.query({}, (tabs) => {
-  console.log('All tabs:', tabs);
-
-  // Find the tab with the same ID
-  const inspectedTab = tabs.find(tab => tab.id === chrome.devtools.inspectedWindow.tabId);
-  console.log('Inspected tab details:', inspectedTab);
-});
-
-// Also check the inspected window URL
-console.log('inspectedWindow.url:', chrome.devtools.inspectedWindow.url);
-
 const tabId = chrome.devtools.inspectedWindow.tabId;
 let selectedMessageIndex = -1;
 let messages = [];
@@ -125,6 +110,14 @@ function updateUI(connected, status = 'disconnected', evalAllowed = false) {
   evalLabel.classList.toggle('enabled', !!evalAllowed);
 }
 
+// Create an element with a class and (safe) text content
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
 // Render messages
 function renderMessages() {
   const messagesList = document.getElementById('messages-list');
@@ -146,19 +139,14 @@ function renderMessages() {
       messageEl.classList.add('selected');
     }
 
-    const arrow = msg.direction === 'outgoing' ? '&#x2B06' : '&#x2B07'; // Up arrow for outgoing, down arrow for incoming
+    const arrow = msg.direction === 'outgoing' ? '⬆' : '⬇'; // Up arrow for outgoing, down arrow for incoming
     const arrowClass = msg.direction === 'outgoing' ? 'outgoing' : 'incoming';
 
-    // Show the raw JSON data
-    const dataText = JSON.stringify(msg.data);
-
-    messageEl.innerHTML = `
-      <div class="message-data">
-        <span class="message-arrow ${arrowClass}">${arrow}</span>
-        ${dataText}
-      </div>
-      <div class="message-time">${formatTime(msg.timestamp)}</div>
-    `;
+    // Show the raw JSON data. Built with textContent (never innerHTML) -
+    // message data contains page-controlled strings (DOM, console, titles).
+    const dataEl = el('div', 'message-data');
+    dataEl.append(el('span', `message-arrow ${arrowClass}`, arrow), ' ' + JSON.stringify(msg.data));
+    messageEl.append(dataEl, el('div', 'message-time', formatTime(msg.timestamp)));
 
     messageEl.dataset.index = index;
     messagesList.appendChild(messageEl);
@@ -194,8 +182,8 @@ function selectMessage(index) {
   selectedMessageIndex = index;
 
   // Update selected state
-  document.querySelectorAll('.message').forEach((el, i) => {
-    el.classList.toggle('selected', i === index);
+  document.querySelectorAll('.message').forEach((msgEl, i) => {
+    msgEl.classList.toggle('selected', i === index);
   });
 
   // Show detail view
@@ -204,39 +192,19 @@ function selectMessage(index) {
 
   if (index >= 0 && index < messages.length) {
     detailContainer.classList.add('visible');
-    const message = messages[index];
-    const data = message.data;
+    const data = messages[index].data;
+    detailContent.innerHTML = '';
 
-    // Check if this is a screenshot response
-    if (data.type === 'response' && data.success && data.result && data.result.data && 
+    // Screenshot responses get a click-to-open image preview above the JSON
+    if (data.type === 'response' && data.success && data.result && data.result.data &&
         data.result.mimeType && data.result.mimeType.startsWith('image/')) {
-      // Create image preview for screenshot
       const img = document.createElement('img');
       img.src = `data:${data.result.mimeType};base64,${data.result.data}`;
-      img.style.cssText = 'max-width: 100%; height: auto; cursor: pointer; display: block; border: 1px solid #e0e0e0; border-radius: 4px;';
       img.title = 'Click to open in new tab';
-      
-      // Open in new tab on click
-      img.addEventListener('click', () => {
-        window.open(img.src, '_blank');
-      });
-
-      // Show image and data
-      detailContent.innerHTML = '';
-      detailContent.appendChild(img);
-      
-      // Add the rest of the data below the image
-      const dataInfo = document.createElement('pre');
-      dataInfo.textContent = JSON.stringify(data.result, null, 2);
-      dataInfo.style.cssText = 'margin-top: 10px; font-size: 12px; overflow: auto;';
-      detailContent.appendChild(dataInfo);
+      img.addEventListener('click', () => window.open(img.src, '_blank'));
+      detailContent.append(img, el('pre', null, JSON.stringify(data.result, null, 2)));
     } else {
-      // Show only the actual message data, not the wrapper
-      detailContent.innerHTML = '';
-      const pre = document.createElement('pre');
-      pre.style.cssText = 'margin: 0; font-size: 12px; overflow: auto;';
-      pre.textContent = JSON.stringify(message.data, null, 2);
-      detailContent.appendChild(pre);
+      detailContent.append(el('pre', null, JSON.stringify(data, null, 2)));
     }
   } else {
     detailContainer.classList.remove('visible');

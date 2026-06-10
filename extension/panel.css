@@ -348,6 +348,14 @@ html, body {
 .detail-content img {
   max-width: 100%;
   height: auto;
+  display: block;
+  cursor: pointer;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.detail-content img + pre {
+  margin-top: 10px;
 }
 
 /* Footer */

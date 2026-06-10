@@ -57,6 +57,7 @@
   <ul>
     <li><strong>Input now works on background tabs.</strong> Clicks and keystrokes used to vanish silently when the target tab wasn't in front; the page is now told it's focused for the duration of the event, and responses include a warning when the tab is hidden.</li>
     <li><strong>Enter submits forms.</strong> <code>keypress</code> Enter now carries the character event browsers use for implicit form submission.</li>
+    <li><strong>The DevTools panel no longer renders page content as HTML.</strong> Message data in the panel's log is now displayed as plain text, so markup coming back from a page can't distort the panel or inject content into it.</li>
   </ul>
 
   <h2 style="margin-top:52px">Version 1.0</h2>
