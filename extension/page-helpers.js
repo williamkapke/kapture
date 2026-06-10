@@ -479,6 +479,9 @@ const helpers = {
     return respondWith({ selected: true }, selector, xpath);
   },
   scroll: ({selector, xpath, x, y}) => {
+    const hasX = typeof x === 'number';
+    const hasY = typeof y === 'number';
+
     // Element target: bring it into view (handles nested scroll containers).
     if (selector || xpath) {
       let element;
@@ -490,6 +493,21 @@ const helpers = {
       }
       if (!element) return elementNotFound(selector, xpath);
 
+      // Element + coordinates: scroll within the element itself (e.g. an
+      // inner pane or list). A missing axis keeps the element's current
+      // offset. elementScroll reports where it actually landed (clamped).
+      if (hasX || hasY) {
+        element.scrollTo({
+          left: hasX ? x : element.scrollLeft,
+          top: hasY ? y : element.scrollTop,
+          behavior: 'instant'
+        });
+        return respondWith({
+          scrolled: true,
+          elementScroll: { x: element.scrollLeft, y: element.scrollTop }
+        }, selector, xpath);
+      }
+
       // 'instant' so getTabInfo() below reads the final position even when the
       // page sets CSS scroll-behavior: smooth.
       element.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'nearest' });
@@ -498,8 +516,6 @@ const helpers = {
 
     // Coordinate target: absolute document position. Each axis is optional -
     // a missing axis keeps the current offset (e.g. {y: 0} jumps to the top).
-    const hasX = typeof x === 'number';
-    const hasY = typeof y === 'number';
     if (hasX || hasY) {
       const de = document.documentElement;
       const curX = window.pageXOffset || de.scrollLeft;
