@@ -36,7 +36,11 @@ function preprocessToolDefinition(tool: any): ToolDefinition {
     inputSchema.required = tool.required;
   }
 
-  // Move oneOf if it exists (e.g. selector or xpath required)
+  // Carry oneOf onto the schema so jsonSchemaToZod() can build the selector/xpath
+  // refine from it. NOTE: this oneOf is later stripped from the schema advertised
+  // to MCP clients (see the convertedTools loop) because the Anthropic API rejects
+  // oneOf/allOf/anyOf at the top level of input_schema. Do NOT advertise it — the
+  // constraint is enforced by the Zod refine instead.
   if (tool.oneOf) {
     inputSchema.oneOf = tool.oneOf;
   }
@@ -155,8 +159,8 @@ function jsonSchemaToZod(schema: any): z.ZodType<any> {
 
       if (hasSelector && hasXpath) {
         objectSchema = objectSchema.refine(
-          (data: any) => data.selector || data.xpath,
-          { message: 'Either selector or xpath must be provided' }
+          (data: any) => !data.selector !== !data.xpath,
+          { message: 'Provide exactly one of selector or xpath' }
         );
       }
     }
@@ -209,11 +213,19 @@ const convertedTools: Record<string, any> = {};
 for (const tool of toolsConfig.tools) {
   const zodSchema = jsonSchemaToZod(tool.inputSchema);
 
+  // Anthropic and OpenAI reject oneOf/allOf/anyOf at the top level of a tool's
+  // input_schema. The selector/xpath constraint is enforced by the Zod refine
+  // above, so strip these from the schema advertised to MCP clients.
+  const jsonSchema = { ...tool.inputSchema };
+  delete jsonSchema.oneOf;
+  delete jsonSchema.allOf;
+  delete jsonSchema.anyOf;
+
   convertedTools[`${tool.name}Tool`] = {
     name: tool.name,
     description: tool.description,
     inputSchema: zodSchema,
-    jsonSchema: tool.inputSchema,  // Keep original JSON Schema for MCP
+    jsonSchema,  // Original JSON Schema for MCP, minus top-level combinators
     outputSchema: tool.outputSchema  // Pass through if defined in YAML
   };
 }

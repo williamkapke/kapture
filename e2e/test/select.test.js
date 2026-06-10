@@ -161,7 +161,25 @@ describe('Select Tool Tests', function() {
     // Rejected by the server's input validation (-32602 Invalid params)
     expect(error, 'expected a validation error').to.exist;
     expect(error.code).to.equal(-32602);
-    expect(error.message).to.include('Either selector or xpath must be provided');
+    expect(error.message).to.include('Provide exactly one of selector or xpath');
+  });
+
+  it('should reject both selector and xpath', async function() {
+    let error;
+    try {
+      await framework.callToolAndParse('select', {
+        value: 'option1',
+        selector: '#text-input',
+        xpath: '//input'
+      });
+    } catch (e) {
+      error = e;
+    }
+
+    // Exactly one of selector/xpath is allowed (-32602 Invalid params)
+    expect(error, 'expected a validation error').to.exist;
+    expect(error.code).to.equal(-32602);
+    expect(error.message).to.include('Provide exactly one of selector or xpath');
   });
 
   it('should handle select with no options', async function() {

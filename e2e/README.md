@@ -16,9 +16,7 @@ This directory contains end-to-end tests for the Kapture MCP Browser Automation 
    npm run build
    ```
 
-3. Make sure the Kapture extension is installed in Chrome
-
-4. Open http://localhost:61822/test.html in a browser tab (the extension will auto-connect)
+3. Make sure the Kapture extension is installed in your system's default browser (or the one you pass to `new_tab`). The framework opens and connects its own test tab via the `new_tab` tool — you do not need to open a tab or the test page yourself.
 
 ## Running Tests
 
@@ -54,5 +52,5 @@ npm test test/basic.test.js
 ## Notes
 
 - The framework will check if a server is already running before starting a new one
-- Tests require a browser with the Kapture extension to be open on the test page
+- Tests require the Kapture extension installed in the browser `new_tab` launches; the framework opens its own test tab and navigates it to the test page — no manual tab needed
 - The test page (test.html) includes various elements for testing all tools
