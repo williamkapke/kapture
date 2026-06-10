@@ -3,6 +3,7 @@ import { click, hover } from './background-click.js';
 import { navigate, back, forward, close, reload, show } from './background-navigate.js';
 import { screenshot } from './background-screenshot.js';
 import { getLogs, watchConsole } from './background-console.js';
+import { networkMonitor, networkRequests, networkBody } from './background-network.js';
 import { evaluate } from './background-evaluate.js';
 import { type, insertText, clear } from './background-text.js';
 
@@ -63,7 +64,7 @@ chrome.debugger.onDetach.addListener((source) => {
   if (source.tabId) debuggerSessions.delete(source.tabId);
 });
 
-async function acquireDebugger(tabId) {
+export async function acquireDebugger(tabId) {
   let session = debuggerSessions.get(tabId);
   if (!session) {
     session = {
@@ -86,7 +87,7 @@ async function acquireDebugger(tabId) {
   }
 }
 
-async function releaseDebugger(tabId) {
+export async function releaseDebugger(tabId) {
   const session = debuggerSessions.get(tabId);
   if (!session) return; // already detached externally
   session.count--;
@@ -123,6 +124,9 @@ export const backgroundCommands = {
   screenshot,
   getLogs,
   watchConsole,
+  networkMonitor,
+  networkRequests,
+  networkBody,
   evaluate,
   type,
   insertText,

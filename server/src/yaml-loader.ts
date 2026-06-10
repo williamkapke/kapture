@@ -186,6 +186,10 @@ function jsonSchemaToZod(schema: any): z.ZodType<any> {
     return stringSchema;
   }
 
+  if (schema.type === 'boolean') {
+    return z.boolean();
+  }
+
   if (schema.type === 'number') {
     let numberSchema = z.number();
 

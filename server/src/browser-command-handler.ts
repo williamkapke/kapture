@@ -27,6 +27,24 @@ interface ElementParams {
   xpath?: string;
 }
 
+// Compare dotted version strings (e.g. "1.1.0" >= "1.1.0").
+function versionGte(version: string, min: string): boolean {
+  const a = version.split('.').map(Number);
+  const b = min.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const diff = (a[i] || 0) - (b[i] || 0);
+    if (diff !== 0) return diff > 0;
+  }
+  return true;
+}
+
+// Network monitoring tool names -> extension command names. Landed in 1.1.0.
+const NETWORK_TOOLS: { [key: string]: string } = {
+  network_monitor: 'networkMonitor',
+  network_requests: 'networkRequests',
+  network_body: 'networkBody'
+};
+
 export class BrowserCommandHandler {
   private pendingCommands: Map<string, {
     resolve: (result: any) => void;
@@ -35,6 +53,12 @@ export class BrowserCommandHandler {
     tabId?: string;
   }> = new Map();
   private clientInfo: { name?: string; version?: string } = {};
+
+  // Who wants network monitoring on, per tab. Watcher ids are MCP connection
+  // ids (passed through callTool) or a caller-supplied clientId for HTTP.
+  // Monitoring turns on with the first watcher and off with the last; enable
+  // is idempotent per watcher, and a client disconnect releases its watchers.
+  private networkWatchers: Map<string, Set<string>> = new Map();
 
   constructor(
     private browserWebSocketManager: BrowserWebSocketManager,
@@ -52,8 +76,9 @@ export class BrowserCommandHandler {
   /**
    * Call any tool by name with the provided arguments
    * This is the main entry point for tool-handler
+   * callerId identifies the MCP connection making the call (absent for HTTP).
    */
-  async callTool(toolName: string, args: any): Promise<any> {
+  async callTool(toolName: string, args: any, callerId?: string): Promise<any> {
     // Handle special cases that don't go through executeCommand
     if (toolName === 'new_tab') {
       return this.newTab(args?.browser);
@@ -104,6 +129,28 @@ export class BrowserCommandHandler {
       });
     }
 
+    if (NETWORK_TOOLS[toolName]) {
+      // Network monitoring landed in extension 1.1.0; older extensions would
+      // route the unknown command to the content script and fail confusingly.
+      // A missing tab falls through to executeCommand, which reports it as
+      // "Tab not found" rather than masking it as an outdated extension.
+      const tab = this.tabRegistry.get(args.tabId);
+      if (tab && (!tab.version || !versionGte(tab.version, '1.1.0'))) {
+        return {
+          success: false,
+          error: {
+            code: 'EXTENSION_OUTDATED',
+            message: 'The connected Kapture extension does not support network monitoring. Update the extension to the latest version.'
+          }
+        };
+      }
+
+      if (toolName === 'network_monitor') {
+        return this.networkMonitor(args, callerId);
+      }
+      return this.executeCommand(NETWORK_TOOLS[toolName], args);
+    }
+
     // Map tool names to command names (most are the same)
     const commandMap: { [key: string]: string } = {
       'console_logs': 'getLogs'
@@ -111,6 +158,90 @@ export class BrowserCommandHandler {
 
     const command = commandMap[toolName] || toolName;
     return this.executeCommand(command, args);
+  }
+
+  // ========================================================================
+  // Network Monitoring Watchers
+  // ========================================================================
+
+  /**
+   * Per-watcher enable/disable for network monitoring. The watcher id is the
+   * caller's MCP connection id, or `clientId` from the request body for HTTP
+   * callers (HTTP calls without one share the 'http' identity). Enable is
+   * idempotent per watcher; monitoring stops when the last watcher disables,
+   * or immediately with force:true.
+   */
+  private async networkMonitor(args: any, callerId?: string): Promise<any> {
+    const { tabId, enabled, force, clientId } = args;
+    const watcherId = clientId || callerId || 'http';
+
+    if (enabled) {
+      let watchers = this.networkWatchers.get(tabId);
+      if (!watchers) {
+        watchers = new Set();
+        this.networkWatchers.set(tabId, watchers);
+      }
+      watchers.add(watcherId);
+
+      // The extension's enable is idempotent; always forward so the response
+      // carries fresh tab info and buffer state.
+      let result;
+      try {
+        result = await this.executeCommand('networkMonitor', { tabId, enabled: true });
+      } catch (error) {
+        this.removeNetworkWatcher(tabId, watcherId);
+        throw error;
+      }
+      if (result?.success === false) {
+        this.removeNetworkWatcher(tabId, watcherId);
+        return result;
+      }
+      return { ...result, watchers: watchers.size };
+    }
+
+    // Disable
+    const watchers = this.networkWatchers.get(tabId);
+    if (watchers) {
+      if (force) watchers.clear();
+      else watchers.delete(watcherId);
+      if (watchers.size === 0) this.networkWatchers.delete(tabId);
+    }
+    const remaining = this.networkWatchers.get(tabId)?.size || 0;
+    if (remaining > 0) {
+      // Others still watching - leave monitoring on.
+      return { success: true, monitoring: true, watchers: remaining };
+    }
+    const result = await this.executeCommand('networkMonitor', { tabId, enabled: false });
+    return { ...result, watchers: 0 };
+  }
+
+  private removeNetworkWatcher(tabId: string, watcherId: string): void {
+    const watchers = this.networkWatchers.get(tabId);
+    if (!watchers) return;
+    watchers.delete(watcherId);
+    if (watchers.size === 0) this.networkWatchers.delete(tabId);
+  }
+
+  /**
+   * Release every watcher held by a disconnecting MCP client, turning
+   * monitoring off for tabs where it was the last watcher.
+   */
+  releaseNetworkWatchers(callerId: string): void {
+    for (const [tabId, watchers] of [...this.networkWatchers]) {
+      if (!watchers.delete(callerId)) continue;
+      if (watchers.size > 0) continue;
+      this.networkWatchers.delete(tabId);
+      if (this.tabRegistry.get(tabId)) {
+        this.executeCommand('networkMonitor', { tabId, enabled: false }).catch(() => {
+          // Tab may be mid-disconnect; the extension also stops on socket close.
+        });
+      }
+    }
+  }
+
+  /** Forget watchers for a disconnected tab (the extension already stopped). */
+  clearNetworkWatchersForTab(tabId: string): void {
+    this.networkWatchers.delete(tabId);
   }
 
   // ========================================================================

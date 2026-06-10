@@ -33,11 +33,12 @@ export class ToolHandler {
   private async executeWithProgress(
     name: string,
     args: any,
-    onProgress?: (progress: number, total: number) => void
+    onProgress?: (progress: number, total: number) => void,
+    callerId?: string
   ): Promise<any> {
     const estimatedMs = args.timeout || 5000;
     if (!onProgress || estimatedMs < 4000) {
-      return this.commandHandler.callTool(name, args);
+      return this.commandHandler.callTool(name, args, callerId);
     }
 
     const start = Date.now();
@@ -46,13 +47,13 @@ export class ToolHandler {
     }, 3000);
 
     try {
-      return await this.commandHandler.callTool(name, args);
+      return await this.commandHandler.callTool(name, args, callerId);
     } finally {
       clearInterval(ticker);
     }
   }
 
-  public async callTool(name: string, args: any, onProgress?: (progress: number, total: number) => void): Promise<any> {
+  public async callTool(name: string, args: any, onProgress?: (progress: number, total: number) => void, callerId?: string): Promise<any> {
     const tool = allTools.find(t => t.name === name);
     if (!tool) {
       throw new Error(`Unknown tool: ${name}`);
@@ -100,7 +101,7 @@ export class ToolHandler {
             // Add 2 seconds to the delay for processing overhead
             validatedArgs.timeout = Math.max(5000, validatedArgs.delay + 2000);
           }
-          result = await this.executeWithProgress(name, validatedArgs, onProgress);
+          result = await this.executeWithProgress(name, validatedArgs, onProgress, callerId);
           break;
         case 'type':
           // Scale the timeout to the text length and per-key delay so long
@@ -110,11 +111,11 @@ export class ToolHandler {
             const delay = validatedArgs.delay || 0;
             validatedArgs.timeout = Math.min(120000, Math.max(5000, len * (delay + 15) + 2000));
           }
-          result = await this.executeWithProgress(name, validatedArgs, onProgress);
+          result = await this.executeWithProgress(name, validatedArgs, onProgress, callerId);
           break;
         default:
           // All other tools go through the generic callTool method
-          result = await this.executeWithProgress(name, validatedArgs, onProgress);
+          result = await this.executeWithProgress(name, validatedArgs, onProgress, callerId);
           break;
       }
 

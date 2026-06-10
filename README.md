@@ -196,6 +196,9 @@ Then ask Claude to interact with web pages:
 - `elements` - Query all elements matching a CSS selector or XPath with optional visibility filtering
 - `console_logs` - Get the tab's console contents (console messages, uncaught exceptions, browser-generated entries)
 - `watch_console` - Watch the console in real time for a required timeout (ms), then return everything logged during the window
+- `network_monitor` - Turn network monitoring on/off for a tab (`enabled` boolean). While on, every request's metadata is captured into a per-tab buffer. Watchers are tracked by client identity: enable is idempotent, monitoring stays on until every watcher disables (or `force:true`), and disconnected clients are released automatically. The buffer clears when monitoring fully stops. Enable it *before* the traffic you want to observe — capture has no history. (Extension 1.1.0+)
+- `network_requests` - List the captured requests; each carries a `requestId`, a monotonic `seq`, and `hasPostData` when the request had a payload. Poll incrementally by passing the prior call's `cursor` as `since`.
+- `network_body` - Fetch a request's bodies by `requestId` (monitoring must be on): the `requestBody` POST payload and the response `body`. Truncated to `maxBytes` (default 65536) with `bodyTruncated:true` while `size` reports the full length; returns `bodyError` if the response body was evicted or is streaming (`text/event-stream` can't be read via CDP).
 - `evaluate` - Execute JavaScript in the page and return the result. Off by default: only available after enabling the "Allow JS execution" toggle in the extension popup or DevTools panel for a connected tab. The grant resets on disconnect.
 - `compose` - Run a sequence of commands against one tab in a single call. Script is one command per line as `<tool>?<query-string>` (plus `wait?t=<ms>`); runs in order, stops on first failure, returns an array of per-command responses.
 

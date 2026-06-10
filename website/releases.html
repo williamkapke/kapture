@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>What's New in v1.0 — Kapture</title>
-<meta name="description" content="What's new in Kapture v1.0: run JavaScript, type like a real user, scroll, and run command sequences.">
-<meta property="og:title" content="What's New in Kapture v1.0">
-<meta property="og:description" content="Run JavaScript, type like a real user, scroll, and run command sequences.">
+<title>What's New in v1.1 — Kapture</title>
+<meta name="description" content="What's new in Kapture v1.1: watch a tab's network traffic and read response bodies on demand.">
+<meta property="og:title" content="What's New in Kapture v1.1">
+<meta property="og:description" content="Watch a tab's network traffic and read response bodies on demand.">
 <meta property="og:url" content="https://williamkapke.github.io/kapture/releases.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,9 +38,23 @@
 
 <main>
 <section class="page"><div class="wrap"><article class="doc">
-  <span class="eyebrow">Version 1.0</span>
-  <h1>New ways to drive the page</h1>
-  <p class="lead">This release adds the most-requested controls: running JavaScript, typing the way a person does, scrolling, and batching commands. Chrome updates the extension automatically, so you already have it.</p>
+  <span class="eyebrow">Version 1.1</span>
+  <h1>Watch the network</h1>
+  <p class="lead">Kapture can now see the network. Turn on monitoring for a tab, drive the page however you like, then read back every request it made — with response bodies on demand. Chrome updates the extension automatically, so you already have it.</p>
+
+  <div class="callout">
+    <h3>Network monitoring</h3>
+    <p>Three new tools capture a tab's network traffic. Because the browser keeps no history, you turn monitoring on <em>before</em> the action you want to watch, then inspect what happened:</p>
+    <ul>
+      <li><code>network_monitor</code> — turn capture on or off for a tab. Watchers are tracked per client, so it stays on until everyone watching turns it off — and a client that disconnects is released automatically.</li>
+      <li><code>network_requests</code> — list the captured requests (url, method, status, type, size, timing). Poll just the new ones by passing back the cursor from the previous call.</li>
+      <li><code>network_body</code> — pull an individual request's bodies on demand, fetched live from the browser: the POST payload it sent and the response it got back.</li>
+    </ul>
+    <p style="margin-top:14px"><a class="btn btn-ghost btn-sm" href="MCP_USAGE.html#available-tools"><i data-lucide="arrow-right"></i> Read the docs</a></p>
+  </div>
+
+  <h2 style="margin-top:52px">Version 1.0</h2>
+  <p class="lead" style="font-size:inherit">Earlier, v1.0 added the most-requested controls: running JavaScript, typing the way a person does, scrolling, and batching commands.</p>
 
   <div class="callout">
     <h3>Run JavaScript in the page</h3>

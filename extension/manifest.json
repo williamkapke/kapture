@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Kapture MCP Browser Automation",
   "short_name": "Kapture",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Remote browser automation via MCP - DevTools Extension",
   "author": "William Kapke",
   "homepage_url": "https://github.com/williamkapke/kapture",

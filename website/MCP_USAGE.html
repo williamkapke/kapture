@@ -670,6 +670,42 @@ graph LR
             </div>
         </div>
 
+        <h3>Network Monitoring</h3>
+        <p>Capture has <strong>no history</strong> — the browser only reports requests that happen while monitoring is on. Turn it on <em>before</em> the traffic you want to observe (e.g. before navigating or clicking), then read the list and pull individual bodies. Watchers are tracked by client identity: enabling twice is idempotent, monitoring stays on until every watcher turns it off, and a disconnected client's watchers are released automatically. The buffer is cleared when monitoring fully stops.</p>
+
+        <div class="tool-grid">
+            <div class="tool-card">
+                <h4>network_monitor</h4>
+                <p>Turn network capture on or off for a tab. While on, every request's metadata accumulates into a per-tab buffer. <code>force:true</code> with <code>enabled:false</code> stops it unconditionally. HTTP callers can pass a <code>clientId</code> as their identity (MCP clients are identified automatically).</p>
+                <pre><code>{
+  tabId: "tab_1234567890",
+  enabled: true,   // false to stop
+  force: false,    // optional, with enabled:false
+  clientId: "ci-1" // optional, HTTP callers only
+}</code></pre>
+            </div>
+
+            <div class="tool-card">
+                <h4>network_requests</h4>
+                <p>List captured requests. Each carries a <code>requestId</code> for <code>network_body</code>, a monotonic <code>seq</code>, and <code>hasPostData</code> when the request had a payload; pass the prior <code>cursor</code> as <code>since</code> to poll only new ones.</p>
+                <pre><code>{
+  tabId: "tab_1234567890",
+  since: 0,    // optional cursor
+  limit: 50    // optional, 1-1000
+}</code></pre>
+            </div>
+
+            <div class="tool-card">
+                <h4>network_body</h4>
+                <p>Fetch a request's bodies (monitoring must be on): <code>requestBody</code> for the POST payload and <code>body</code> for the response. Read live, so the response returns <code>bodyError</code> if evicted or streaming (<code>text/event-stream</code> can't be read via CDP). Truncated to <code>maxBytes</code> with <code>bodyTruncated:true</code> while <code>size</code> reports the full length.</p>
+                <pre><code>{
+  tabId: "tab_1234567890",
+  requestId: "1277.42",
+  maxBytes: 65536  // optional, 1024-1048576
+}</code></pre>
+            </div>
+        </div>
+
         <h3>Composite</h3>
 
         <div class="tool-grid">
@@ -941,6 +977,41 @@ const watched = await callTool('watch_console', {
   timeout: 30000
 });
 console.log('Logged during upload:', watched.logs);</code></pre>
+
+        <h3>Network Monitoring</h3>
+        <pre><code>// Capture the API calls a page makes during an action.
+// Enable BEFORE the traffic - capture has no history.
+async function captureApiCalls(tabId, action) {
+  await callTool('network_monitor', { tabId, enabled: true });
+  try {
+    await action(); // navigate, click, submit a form, etc.
+
+    const { requests } = await callTool('network_requests', { tabId });
+    const api = requests.filter(r => r.url.includes('/api/'));
+
+    // Pull what was sent and received, per request, on demand
+    for (const r of api) {
+      const res = await callTool('network_body', {
+        tabId,
+        requestId: r.requestId
+      });
+      console.log(r.method, r.url, '→', res.status);
+      if (res.requestBody) console.log('  sent:', res.requestBody);
+      console.log('  received:', res.bodyError ? `(${res.bodyError})` : res.body);
+    }
+    return api;
+  } finally {
+    await callTool('network_monitor', { tabId, enabled: false });
+  }
+}
+
+// Poll incrementally on a long-running page using the cursor
+let since = 0;
+for (let i = 0; i &lt; 5; i++) {
+  const page = await callTool('network_requests', { tabId, since });
+  since = page.cursor; // only newer requests next time
+  console.log('new requests:', page.requests.length);
+}</code></pre>
 
         <h2 id="troubleshooting">Troubleshooting</h2>
 

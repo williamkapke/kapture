@@ -352,6 +352,81 @@ tools:
         minimum: 1000
         maximum: 60000
 
+  network_monitor:
+    description: >-
+      Turn network monitoring on or off for a browser tab. While on, Kapture stays
+      attached to the tab and records every network request (url, method, status,
+      type, size, timing) into a buffer you read with `network_requests`; fetch an
+      individual request/response body with `network_body`. The capture has NO
+      history - it only sees requests that happen while monitoring is on, so
+      enable it BEFORE the traffic you want to observe (e.g. before navigating or
+      clicking). Enable is idempotent per caller: each watching client is tracked
+      by identity, monitoring stays on until every watcher has disabled (or
+      `force` is used), and a client's watchers are released automatically when
+      it disconnects. The request buffer is cleared when monitoring fully stops.
+      Extension 1.1.0+.
+    required: [tabId, enabled]
+    properties:
+      tabId: *tabId
+      enabled:
+        type: boolean
+        description: true to start monitoring, false to stop
+      clientId:
+        type: string
+        description: >-
+          Watcher identity for HTTP callers - pass the same value to enable and
+          disable. MCP clients are identified automatically and should omit this.
+          HTTP calls without one share a single 'http' identity.
+      force:
+        type: boolean
+        description: With enabled:false, remove ALL watchers and stop monitoring unconditionally
+
+  network_requests:
+    description: >-
+      List the network requests captured since monitoring was enabled. Returns
+      lean metadata per request (plus `hasPostData` when the request carried a
+      payload) and a `requestId` to pass to `network_body`. Each request has a
+      monotonic `seq`; poll incrementally by passing the `cursor` from the
+      previous call as `since` to get only newer requests. Returns
+      monitoring:false (and an empty list) if monitoring is not currently on.
+    required: [tabId]
+    properties:
+      tabId: *tabId
+      since:
+        type: number
+        description: Only return requests with a seq greater than this cursor (use the `cursor` from a prior call). Omit for all buffered requests.
+        minimum: 0
+      limit:
+        type: number
+        description: Maximum number of requests to return
+        default: 50
+        minimum: 1
+        maximum: 1000
+
+  network_body:
+    description: >-
+      Fetch the bodies for a single captured request by `requestId` (from
+      network_requests). Monitoring must be on. Returns the request payload as
+      `requestBody` (when the request had one - see `hasPostData` in the list)
+      and the response body as `body`, plus the request/response headers. The
+      response body is read live from the browser, so it may be unavailable -
+      evicted, from a page that has since navigated away, or a streaming
+      (text/event-stream) response that CDP cannot read - which returns a
+      `bodyError` instead. Binary bodies come back base64-encoded
+      (base64Encoded:true).
+    required: [tabId, requestId]
+    properties:
+      tabId: *tabId
+      requestId:
+        type: string
+        description: The requestId from a network_requests entry
+      maxBytes:
+        type: number
+        description: Maximum body bytes to return inline; longer bodies are truncated (bodyTruncated:true) while `size` still reports the full length
+        default: 65536
+        minimum: 1024
+        maximum: 1048576
+
   evaluate:
     description: >-
       Execute JavaScript in the page and return the result. The code runs in

@@ -1,5 +1,6 @@
 import { TabState } from './tab-state.js';
 import { backgroundCommands, getTabInfo, detectBrowser } from './background-commands.js';
+import { stopNetworkMonitor } from './background-network.js';
 
 export class TabManager {
   constructor() {
@@ -211,6 +212,10 @@ export class TabManager {
       // Any disconnect (user toggle, server restart, tab close) revokes the
       // "Allow JavaScript Execution" grant - it must be re-enabled manually.
       tabState.evalAllowed = false;
+
+      // Stop network monitoring too - the server tracks who wants it, so a
+      // dead connection means nobody can ever turn it off otherwise.
+      stopNetworkMonitor(tabState.tabId).catch(() => {});
 
       tabState.clearWebSocket();
 

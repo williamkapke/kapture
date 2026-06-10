@@ -130,9 +130,9 @@
     </div>
 
     <div class="tools-tabs reveal">
-      <button class="tab active" data-tab="tools">Tools <span class="count">28</span></button>
+      <button class="tab active" data-tab="tools">Tools <span class="count">31</span></button>
       <button class="tab" data-tab="resources">Resources <span class="count">7</span></button>
-      <button class="tab" data-tab="http">HTTP Endpoints <span class="count">29</span></button>
+      <button class="tab" data-tab="http">HTTP Endpoints <span class="count">32</span></button>
     </div>
 
     <!-- TOOLS -->
@@ -193,6 +193,17 @@
           <div class="tool"><span class="name">console_logs</span><span class="desc">Get console messages, exceptions, and entries</span></div>
           <div class="tool"><span class="name">watch_console</span><span class="desc">Watch the console in real time for a duration</span></div>
           <div class="tool"><span class="name">elementsFromPoint</span><span class="desc">Get elements at specific coordinates</span></div>
+        </div>
+
+        <div class="tgroup reveal" data-d="4">
+          <div class="tgroup-head">
+            <span class="ic"><i data-lucide="network"></i></span>
+            <h3>Network</h3>
+            <span class="gc">3</span>
+          </div>
+          <div class="tool"><span class="name">network_monitor</span><span class="desc">Turn network capture on/off for a tab</span></div>
+          <div class="tool"><span class="name">network_requests</span><span class="desc">List captured requests, poll new ones with a cursor</span></div>
+          <div class="tool"><span class="name">network_body</span><span class="desc">Fetch a request's payload and response body on demand</span></div>
         </div>
       </div>
       <p class="mono" id="noResults" style="display:none;color:var(--ink-3);margin-top:28px;font-size:14px">// no tools match that filter</p>
@@ -280,6 +291,13 @@
           <div class="endpoint"><span class="method">POST</span> <code>/tab/{tabId}/compose</code></div>
         </div>
         <div class="res reveal" data-d="5">
+          <div class="rh"><span class="ic"><i data-lucide="network"></i></span><h3>Network monitoring (POST)</h3></div>
+          <div class="endpoint"><span class="method">POST</span> <code>/tab/{tabId}/network_monitor</code></div>
+          <div class="endpoint"><span class="method">POST</span> <code>/tab/{tabId}/network_requests</code></div>
+          <div class="endpoint"><span class="method">POST</span> <code>/tab/{tabId}/network_body</code></div>
+          <p class="note">Toggle capture, then read the request list and pull individual response bodies — same JSON shapes as the MCP tools.</p>
+        </div>
+        <div class="res reveal" data-d="6">
           <div class="rh"><span class="ic"><i data-lucide="layout-grid"></i></span><h3>Tabs &amp; debugging</h3></div>
           <div class="endpoint"><span class="method">POST</span> <code>/tabs</code></div>
           <div class="endpoint"><span class="method">DELETE</span> <code>/tab/{tabId}</code></div>

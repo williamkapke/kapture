@@ -117,6 +117,9 @@ export class MCPServerManager {
 
     // Tab disconnect callback
     this.tabRegistry.setDisconnectCallback(async (tabId: string) => {
+      // Forget network-monitoring watchers (the extension stops on its own)
+      this.commandHandler.clearNetworkWatchersForTab(tabId);
+
       // Remove dynamic resources
       this.dynamicTabResources.delete(tabId);
       this.dynamicTabResources.delete(`${tabId}/console`);
@@ -289,7 +292,7 @@ export class MCPServerManager {
           }
         : undefined;
 
-      return this.toolHandler.callTool(name, args, onProgress);
+      return this.toolHandler.callTool(name, args, onProgress, connectionId);
     });
 
     // List resources handler
@@ -345,6 +348,8 @@ export class MCPServerManager {
     ws.on('close', () => {
       logger.log(`MCP WebSocket client disconnected (${connectionId})`);
       this.connections.delete(connectionId);
+      // Release any network-monitoring watchers this client held
+      this.commandHandler.releaseNetworkWatchers(connectionId);
     });
   }
 

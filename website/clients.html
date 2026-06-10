@@ -329,6 +329,14 @@
       { group: 'Inspection', name: 'console', method: 'GET', path: '/console', desc: 'Get console logs (newest first)',
         fields: [{ name: 'level', options: ['', 'log', 'info', 'warn', 'error'] }, { name: 'limit', type: 'number', placeholder: '100' }, { name: 'before', placeholder: 'timestamp' }] },
 
+      // Network monitoring (enable before the traffic you want to capture - no history)
+      { group: 'Network', name: 'network_monitor', method: 'POST', path: '/network_monitor', desc: 'Turn network capture on or off (watchers tracked per clientId; force clears all)',
+        fields: [{ name: 'enabled', type: 'boolean', options: ['true', 'false'], required: true }, { name: 'clientId', placeholder: 'your watcher id' }, { name: 'force', type: 'boolean', options: ['', 'true'] }] },
+      { group: 'Network', name: 'network_requests', method: 'POST', path: '/network_requests', desc: 'List captured requests; poll new ones with the returned cursor as since',
+        fields: [{ name: 'since', type: 'number', placeholder: '0 (cursor)' }, { name: 'limit', type: 'number', placeholder: '50' }] },
+      { group: 'Network', name: 'network_body', method: 'POST', path: '/network_body', desc: 'Fetch request payload + response body by requestId (monitoring must be on)',
+        fields: [{ name: 'requestId', placeholder: 'from network_requests', required: true }, { name: 'maxBytes', type: 'number', placeholder: '65536' }] },
+
       // Compose
       { group: 'Compose', name: 'compose', method: 'POST', path: '/compose', desc: 'Run a sequence of commands (one per line: tool?query). Stops on first failure.',
         fields: [{ name: 'script', multiline: true, required: true, placeholder: 'fill?selector=%23q&value=hello\nclick?selector=%23submit\nwait?t=300' }] },
@@ -531,7 +539,7 @@
     function buildApiCard(def, tabId) {
       const fields = el('div', { className: 'api-fields' }, def.fields.map(field => {
         const input = field.options
-          ? el('select', { dataset: { field: field.name } },
+          ? el('select', { dataset: { field: field.name, type: field.type || 'string' } },
               field.options.map(opt => el('option', { value: opt, textContent: opt || '(default)' })))
           : field.multiline
           ? el('textarea', {
@@ -592,7 +600,8 @@
       card.querySelectorAll('[data-field]').forEach(input => {
         const value = input.value.trim();
         if (value === '') return;
-        args[input.dataset.field] = input.dataset.type === 'number' ? Number(value) : value;
+        const type = input.dataset.type;
+        args[input.dataset.field] = type === 'number' ? Number(value) : type === 'boolean' ? value === 'true' : value;
       });
       return args;
     }
