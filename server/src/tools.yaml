@@ -497,9 +497,12 @@ tools:
       Returns an array of the per-command responses in order; on failure the
       last entry holds the error. Eligible commands: navigate, back, forward,
       reload, click, hover, focus, blur, fill, type, insertText, clear, select,
-      keypress, scroll - plus `wait?t=<ms>` to pause between steps. Data-returning
-      (screenshot, dom, elements, etc.), lifecycle (new_tab, close, show), and
-      evaluate commands are not eligible.
+      keypress, scroll - plus `wait?t=<ms>` to pause between steps. The FINAL
+      command may additionally be a data-returning read - screenshot, dom,
+      elements, elementsFromPoint, console_logs, or watch_console - to verify
+      the outcome in the same call (e.g. click then screenshot, or fill then
+      console_logs). Data reads anywhere else, lifecycle (new_tab, close,
+      show), and evaluate commands are not eligible.
     required: [tabId, script]
     properties:
       tabId: *tabId

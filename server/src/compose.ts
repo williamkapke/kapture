@@ -2,13 +2,19 @@ import { allTools } from './yaml-loader.js';
 
 // Commands eligible inside a compose script: per-tab actions only. Excluded are
 // the gated (evaluate), lifecycle/focus (show, close, new_tab), and
-// data-returning (screenshot, dom, elements, elementsFromPoint, console_logs,
-// watch_console, list_tabs, tab_detail) tools - those are run to read a result,
-// not to advance a sequence.
+// non-tab (list_tabs, tab_detail) tools.
 export const ELIGIBLE_COMPOSE_TOOLS = new Set([
   'navigate', 'back', 'forward', 'reload',
   'click', 'hover', 'focus', 'blur',
   'fill', 'type', 'insertText', 'clear', 'select', 'keypress', 'scroll'
+]);
+
+// Data-returning commands may appear only as the FINAL command - act, then
+// verify in the same call (click then screenshot, fill then console_logs).
+// Mid-script they could never influence later steps (compose has no
+// conditionals) and would just bloat the response.
+export const TERMINAL_COMPOSE_TOOLS = new Set([
+  'screenshot', 'dom', 'elements', 'elementsFromPoint', 'console_logs', 'watch_console'
 ]);
 
 const MAX_ACTIONS = 100;
@@ -70,7 +76,7 @@ export function parseComposeScript(script: string, tabId: string): ComposeStep[]
       return;
     }
 
-    if (!ELIGIBLE_COMPOSE_TOOLS.has(command)) {
+    if (!ELIGIBLE_COMPOSE_TOOLS.has(command) && !TERMINAL_COMPOSE_TOOLS.has(command)) {
       errors.push(`Line ${lineNo}: '${command}' is not an eligible compose command`);
       return;
     }
@@ -80,7 +86,7 @@ export function parseComposeScript(script: string, tabId: string): ComposeStep[]
     const args: any = {};
     for (const [key, value] of params.entries()) {
       if (key === 'tabId') continue; // injected by compose, never from the line
-      if (props[key]?.type === 'number') {
+      if (props[key]?.type === 'number' || props[key]?.type === 'integer') {
         const n = Number(value);
         args[key] = Number.isFinite(n) ? n : value; // let the schema reject NaN
       } else {
@@ -96,6 +102,12 @@ export function parseComposeScript(script: string, tabId: string): ComposeStep[]
     }
 
     steps.push({ line: lineNo, command, args, isWait: false, waitMs: 0 });
+  });
+
+  steps.forEach((step, i) => {
+    if (TERMINAL_COMPOSE_TOOLS.has(step.command) && i !== steps.length - 1) {
+      errors.push(`Line ${step.line}: '${step.command}' returns data and may only be the final command`);
+    }
   });
 
   if (steps.length === 0 && errors.length === 0) {
@@ -115,7 +127,9 @@ export function parseComposeScript(script: string, tabId: string): ComposeStep[]
  * Execute a compose script: run each command in order against the shared tab,
  * stopping at the first failure (a tool throwing, or returning success:false -
  * e.g. element-not-found). Returns the in-order array of per-command responses;
- * the last entry holds the failure when stopped early.
+ * the last entry holds the failure when stopped early. When the script ends in
+ * a screenshot, `image` carries its MCP image content block (the screenshot
+ * tool's JSON only holds metadata - the pixels travel in a separate block).
  *
  * onProgress fires before each step (and during long waits) so MCP clients that
  * treat progress as keep-alive don't time out on a long batch.
@@ -124,10 +138,11 @@ export async function executeCompose(
   args: { script: string; tabId: string },
   callTool: (name: string, args: any, onProgress?: (progress: number, total: number) => void) => Promise<any>,
   onProgress?: (progress: number, total: number) => void
-): Promise<any[]> {
+): Promise<{ results: any[]; image?: any }> {
   const steps = parseComposeScript(args.script, args.tabId);
   const total = steps.length;
   const results: any[] = [];
+  let image: any;
 
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
@@ -153,6 +168,8 @@ export async function executeCompose(
       const res = await callTool(step.command, { ...step.args, tabId: args.tabId }, stepProgress);
       parsed = JSON.parse(res.content[0].text);
       if (res.isError) parsed.success = false;
+      // A terminal screenshot's pixels arrive as a separate image content block
+      image = res.content?.find((c: any) => c.type === 'image');
     } catch (error: any) {
       parsed = { success: false, error: { message: error.message } };
     }
@@ -162,5 +179,5 @@ export async function executeCompose(
   }
 
   if (onProgress) onProgress(total, total);
-  return results;
+  return { results, image };
 }

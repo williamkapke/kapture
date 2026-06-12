@@ -160,6 +160,75 @@ describe('Compose Tool Tests', function() {
     expect(ce.html).to.include('inserted');
   });
 
+  it('should allow a data-returning command as the final step', async function() {
+    const script = [
+      'fill?selector=%23text-input&value=verify+me',
+      'elements?selector=%23text-input'
+    ].join('\n');
+
+    const results = await framework.callToolAndParse('compose', { script });
+
+    expect(results).to.be.an('array').with.lengthOf(2);
+    expect(results[1].command).to.equal('elements');
+    expect(results[1].success).to.equal(true);
+    expect(results[1].elements[0].value).to.equal('verify me');
+  });
+
+  it('should return dom content from a terminal dom step', async function() {
+    const script = [
+      'click?selector=%23test-button',
+      'dom?selector=%23click-result'
+    ].join('\n');
+
+    const results = await framework.callToolAndParse('compose', { script });
+
+    expect(results[1].command).to.equal('dom');
+    expect(results[1].html).to.include('clicked');
+  });
+
+  it('should carry a terminal screenshot through as an image content block', async function() {
+    const script = [
+      'scroll?y=0',
+      'screenshot?scale=0.2'
+    ].join('\n');
+
+    const res = await framework.callTool('compose', { script });
+
+    expect(res.content).to.have.lengthOf(2);
+    expect(res.content[1].type).to.equal('image');
+    expect(res.content[1].data).to.be.a('string').that.is.not.empty;
+
+    const results = JSON.parse(res.content[0].text);
+    expect(results[1].command).to.equal('screenshot');
+    expect(results[1].success).to.equal(true);
+    expect(results[1]).to.have.property('preview');
+  });
+
+  it('should coerce integer args in a terminal console_logs step', async function() {
+    const results = await framework.callToolAndParse('compose', { script: 'console_logs?limit=5' });
+
+    expect(results).to.have.lengthOf(1);
+    expect(results[0].command).to.equal('console_logs');
+    expect(results[0].success).to.equal(true);
+    expect(results[0].logs).to.be.an('array');
+  });
+
+  it('should reject a data-returning command that is not the final step', async function() {
+    const script = [
+      'elements?selector=%23text-input',
+      'fill?selector=%23text-input&value=SHOULD_NOT_APPLY'
+    ].join('\n');
+
+    const res = await framework.callToolAndParse('compose', { script });
+
+    expect(res).to.have.property('error');
+    expect(res.error.message).to.include('final command');
+
+    // nothing executed
+    const input = await framework.callToolAndParse('elements', { selector: '#text-input' });
+    expect(input.elements[0].value || '').to.equal('');
+  });
+
   it('should run the navigation tools through compose', async function() {
     // navigate (encoded url), then the bare/no-query forms reload, back, forward
     const script = [

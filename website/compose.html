@@ -70,7 +70,11 @@ wait?t=500</code></pre>
     <code>fill</code><code>type</code><code>insertText</code><code>clear</code><code>select</code><code>keypress</code><code>scroll</code>
     <code class="new">wait?t=&lt;ms&gt;</code>
   </div>
-  <p style="margin-top:18px">Data-returning commands (<code>screenshot</code>, <code>dom</code>, <code>elements</code>, <code>console_logs</code>…), lifecycle commands (<code>new_tab</code>, <code>close</code>, <code>show</code>), and <code>evaluate</code> are <strong>not</strong> eligible — they're meant to read a result or change the tab set, not advance a sequence.</p>
+  <p style="margin-top:18px">The <strong>final</strong> command may also be a data-returning read, so a script can act and then verify in the same call:</p>
+  <div class="cmd-chips">
+    <code>screenshot</code><code>dom</code><code>elements</code><code>elementsFromPoint</code><code>console_logs</code><code>watch_console</code>
+  </div>
+  <p style="margin-top:18px">Data reads anywhere <em>but</em> the end, lifecycle commands (<code>new_tab</code>, <code>close</code>, <code>show</code>), and <code>evaluate</code> are <strong>not</strong> eligible. Mid-script, a read could never influence later steps — compose has no conditionals — so it would only bloat the response.</p>
 
   <h2>How it runs</h2>
   <ul>
@@ -101,6 +105,20 @@ type?selector=.editor&text=Drafting+from+an+AI+agent.</code></pre>
     <pre><code>clear?selector=%23title
 type?selector=%23title&text=Q3+roadmap
 keypress?key=Tab</code></pre>
+  </div>
+
+  <div class="ex">
+    <p class="ex-note">Act, then verify — submit a form and end with a screenshot of the result (the image comes back in the same response):</p>
+    <pre><code>fill?selector=%23email&value=me%40example.com
+click?selector=%23submit
+wait?t=800
+screenshot</code></pre>
+  </div>
+
+  <div class="ex">
+    <p class="ex-note">Click something, then watch the console for errors it triggers:</p>
+    <pre><code>click?selector=%23load-more
+watch_console?timeout=3000</code></pre>
   </div>
 
   <h2>Calling it</h2>

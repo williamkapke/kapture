@@ -89,11 +89,22 @@ export class ToolHandler {
           // Run each line through callTool (reusing all per-tool validation and
           // timeout handling); forward progress so a long sub-command (e.g. a
           // type with a big delay) keeps the client alive mid-step.
-          result = await executeCompose(
+          const composed = await executeCompose(
             validatedArgs,
             (subName, subArgs, subProgress) => this.callTool(subName, subArgs, subProgress),
             onProgress
           );
+          result = composed.results;
+          // A script ending in a screenshot carries its image through as a
+          // second content block, same shape as the screenshot tool itself.
+          if (composed.image) {
+            return {
+              content: [
+                { type: 'text', text: JSON.stringify(result, null, 2) },
+                composed.image
+              ]
+            };
+          }
           break;
         case 'keypress':
           // Automatically adjust timeout based on delay

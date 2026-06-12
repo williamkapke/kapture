@@ -41,6 +41,7 @@ export async function screenshot({tabId}, { scale = 0.5, quality = 0.5, format =
     });
 
     return {
+      success: true,
       ...elementResult,
       element: undefined,
       selector: elementResult.element?.selector || undefined,

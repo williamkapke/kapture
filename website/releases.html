@@ -40,7 +40,7 @@
 <section class="page"><div class="wrap"><article class="doc">
   <span class="eyebrow">Version 1.2</span>
   <h1>Click anywhere</h1>
-  <p class="lead">Kapture can now click and hover at a plain viewport coordinate — no selector required. And when a page throws up an alert, the agent is no longer stuck: it sees the dialog and answers it.</p>
+  <p class="lead">Kapture can now click and hover at a plain viewport coordinate — no selector required. When a page throws up an alert, the agent is no longer stuck: it sees the dialog and answers it. And a <code>compose</code> script can end with a screenshot or other read, so act-and-verify is one call.</p>
 
   <div class="callout">
     <h3>Coordinate clicks reach inside iframes</h3>
@@ -51,6 +51,12 @@
   <div class="callout">
     <h3>Dialogs no longer kill the run</h3>
     <p>An unexpected <code>alert</code>, <code>confirm</code>, or <code>prompt</code> freezes the page — and until now, every command after it just timed out while the assistant sat in the dark. Now the command that triggered the dialog returns immediately with its type and message, every other command fails fast with a <code>DIALOG_OPEN</code> error saying exactly what to do, and the new <code>dialog</code> tool answers it: OK or Cancel, with typed text for prompts. Unsaved-changes (<code>onbeforeunload</code>) dialogs work the same way.</p>
+  </div>
+
+  <div class="callout">
+    <h3>compose can now end with a look</h3>
+    <p>The most common sequence in the wild is act, <em>then check</em>: click and take a screenshot, fill and look for console errors, submit and read the DOM. A <code>compose</code> script may now end with one data-returning command — <code>screenshot</code>, <code>dom</code>, <code>elements</code>, <code>elementsFromPoint</code>, <code>console_logs</code>, or <code>watch_console</code> — so the whole act-and-verify round trip is a single call. A terminal screenshot even returns its image in the same response.</p>
+    <p style="margin-top:14px"><a class="btn btn-ghost btn-sm" href="compose.html"><i data-lucide="arrow-right"></i> Read the compose guide</a></p>
   </div>
 
   <hr>

@@ -730,9 +730,9 @@ graph LR
   script: "fill?selector=%23email&value=a%40b.com\n" +
           "click?selector=%23submit\n" +
           "wait?t=500\n" +
-          "scroll?y=0"
+          "screenshot"
 }</code></pre>
-                <p>Eligible: navigate, back, forward, reload, click, hover, focus, blur, fill, type, insertText, clear, select, keypress, scroll, wait. Data-returning (screenshot, dom, elements…), lifecycle (new_tab, close, show), and evaluate are not eligible.</p>
+                <p>Eligible: navigate, back, forward, reload, click, hover, focus, blur, fill, type, insertText, clear, select, keypress, scroll, wait. The <strong>final</strong> command may also be a data-returning read — screenshot, dom, elements, elementsFromPoint, console_logs, or watch_console — to verify the outcome in the same call. Data reads anywhere else, lifecycle (new_tab, close, show), and evaluate are not eligible.</p>
             </div>
         </div>
 
