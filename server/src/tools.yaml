@@ -55,27 +55,43 @@ tools:
 
   click:
     description: >-
-      Click on a page element using CSS selector or XPath. Only the first 
-      matching element will be clicked. Returns the unique selector of the 
-      clicked element. Note: May experience delays if Kapture DevTools panel 
-      is not the active tab.
+      Click on a page element using CSS selector or XPath (first match, its
+      unique selector is returned), or at a viewport coordinate by passing x
+      and y instead. Coordinates are CSS pixels relative to the viewport -
+      NOT screenshot pixels; divide screenshot positions by the
+      screenshot-to-viewport scale. Coordinate clicks hit whatever is at that
+      point, including content inside iframes that selectors cannot reach.
     required: [tabId]
     properties:
       tabId: *tabId
       <<: *selectorAndXpath
+      x:
+        type: number
+        description: Viewport x coordinate in CSS pixels (pair with y; alternative to selector/xpath)
+      y:
+        type: number
+        description: Viewport y coordinate in CSS pixels (pair with x; alternative to selector/xpath)
     <<: *oneOfSelectorOrXpath
 
   hover:
     description: >-
-      Hover over a page element using CSS selector or XPath. Only the first 
-      matching element will be hovered. Returns the unique selector of the 
-      hovered element. Note: May experience delays if Kapture DevTools panel 
-      is not the active tab.
+      Hover over a page element using CSS selector or XPath (first match, its
+      unique selector is returned), or at a viewport coordinate by passing x
+      and y instead. Coordinates are CSS pixels relative to the viewport -
+      NOT screenshot pixels; divide screenshot positions by the
+      screenshot-to-viewport scale. Coordinate hovers hit whatever is at that
+      point, including content inside iframes that selectors cannot reach.
     required: [tabId]
     <<: *oneOfSelectorOrXpath
     properties:
       tabId: *tabId
       <<: *selectorAndXpath
+      x:
+        type: number
+        description: Viewport x coordinate in CSS pixels (pair with y; alternative to selector/xpath)
+      y:
+        type: number
+        description: Viewport y coordinate in CSS pixels (pair with x; alternative to selector/xpath)
 
   focus:
     description: >-

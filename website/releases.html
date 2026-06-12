@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>What's New in v1.1 — Kapture</title>
-<meta name="description" content="What's new in Kapture v1.1: watch a tab's network traffic and read response bodies on demand.">
-<meta property="og:title" content="What's New in Kapture v1.1">
-<meta property="og:description" content="Watch a tab's network traffic and read response bodies on demand.">
+<title>What's New in v1.2 — Kapture</title>
+<meta name="description" content="What's new in Kapture v1.2: click and hover at viewport coordinates — and reach inside iframes.">
+<meta property="og:title" content="What's New in Kapture v1.2">
+<meta property="og:description" content="Click and hover at viewport coordinates — and reach inside iframes.">
 <meta property="og:url" content="https://williamkapke.github.io/kapture/releases.html">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,8 +38,19 @@
 
 <main>
 <section class="page"><div class="wrap"><article class="doc">
+  <span class="eyebrow">Version 1.2</span>
+  <h1>Click anywhere</h1>
+  <p class="lead">Kapture can now click and hover at a plain viewport coordinate — no selector required. Calculate a position from a screenshot, click it, done.</p>
+
+  <div class="callout">
+    <h3>Coordinate clicks reach inside iframes</h3>
+    <p>Pass <code>x</code> and <code>y</code> (CSS viewport pixels) to <code>click</code> or <code>hover</code> instead of a selector. The events dispatch through the browser's input pipeline, so they hit whatever is at that point — including content inside iframes, which selectors have never been able to reach.</p>
+    <p style="margin-top:14px"><a class="btn btn-ghost btn-sm" href="MCP_USAGE.html#available-tools"><i data-lucide="arrow-right"></i> Read the docs</a></p>
+  </div>
+
+  <hr>
   <span class="eyebrow">Version 1.1</span>
-  <h1>Watch the network</h1>
+  <h2 style="margin-top:0">Watch the network</h2>
   <p class="lead">Kapture can now see the network. Turn on monitoring for a tab, drive the page however you like, then read back every request it made — with response bodies on demand.</p>
 
   <div class="callout">

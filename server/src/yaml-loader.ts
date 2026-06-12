@@ -158,10 +158,24 @@ function jsonSchemaToZod(schema: any): z.ZodType<any> {
       );
 
       if (hasSelector && hasXpath) {
-        objectSchema = objectSchema.refine(
-          (data: any) => !data.selector !== !data.xpath,
-          { message: 'Provide exactly one of selector or xpath' }
-        );
+        // Tools that also declare x/y (click, hover) accept viewport
+        // coordinates as a third targeting mode, exclusive with the others
+        if (schema.properties?.x && schema.properties?.y) {
+          objectSchema = objectSchema.refine(
+            (data: any) => {
+              if (data.x !== undefined || data.y !== undefined) {
+                return data.x !== undefined && data.y !== undefined && !data.selector && !data.xpath;
+              }
+              return !data.selector !== !data.xpath;
+            },
+            { message: 'Provide exactly one of selector or xpath, or x and y coordinates' }
+          );
+        } else {
+          objectSchema = objectSchema.refine(
+            (data: any) => !data.selector !== !data.xpath,
+            { message: 'Provide exactly one of selector or xpath' }
+          );
+        }
       }
     }
 

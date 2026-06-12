@@ -499,21 +499,23 @@ graph LR
         <div class="tool-grid">
             <div class="tool-card">
                 <h4>click</h4>
-                <p>Click elements. Returns the unique selector of clicked element.</p>
+                <p>Click elements, or click blind at a viewport coordinate (CSS pixels — reaches inside iframes, which selectors can't). Returns the unique selector of the clicked element.</p>
                 <pre><code>{
   tabId: "tab_1234567890",
   selector: "button.submit",  // CSS
   // OR
   xpath: "//button[contains(text(), 'Submit')]"
+  // OR: { x: 640, y: 360 }  // viewport coordinate
 }</code></pre>
             </div>
 
             <div class="tool-card">
                 <h4>hover</h4>
-                <p>Hover over elements to trigger effects.</p>
+                <p>Hover over elements to trigger effects — by selector, xpath, or viewport coordinate.</p>
                 <pre><code>{
   tabId: "tab_1234567890",
   selector: ".dropdown-trigger"
+  // OR: { x: 640, y: 360 }
 }</code></pre>
             </div>
 

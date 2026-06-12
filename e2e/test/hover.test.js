@@ -63,6 +63,33 @@ describe('Hover Tool Tests', function() {
     expect(afterCount).to.equal(initialCount + 1);
   });
 
+  it('should hover at viewport coordinates', async function() {
+    // Find the hover counter's center, then hover blind at that point
+    const elements = await framework.callToolAndParse('elements', {
+      selector: '#hover-counter'
+    });
+    const bounds = elements.elements[0].bounds;
+
+    const resultData = await framework.callToolAndParse('hover', {
+      x: bounds.x + bounds.width / 2,
+      y: bounds.y + bounds.height / 2
+    });
+
+    expectValidTabInfo(resultData);
+    expect(resultData).to.have.property('hovered').that.equals(true);
+    expect(resultData).to.not.have.property('selector');
+
+    // Wait for hover effect to trigger
+    await delay(500);
+
+    // The mouseenter handler fired even though no selector was given
+    const afterDom = await framework.callToolAndParse('dom', {
+      selector: '#hover-count-display'
+    });
+    const afterMatch = afterDom.html.match(/>(\d+)</);
+    expect(afterMatch ? parseInt(afterMatch[1]) : 0).to.be.greaterThan(0);
+  });
+
   it('should make tooltip visible on hover', async function() {
     // Check tooltip is initially hidden
     const beforeElements = await framework.callToolAndParse('elements', {

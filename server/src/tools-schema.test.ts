@@ -21,3 +21,33 @@ test('no tool advertises oneOf/allOf/anyOf at the top level of its inputSchema',
     `Enforce the constraint in the Zod refine instead of the advertised schema (see yaml-loader.ts).`
   );
 });
+
+// click/hover accept a third targeting mode - viewport coordinates - which is
+// mutually exclusive with selector/xpath and requires both axes.
+test('click/hover accept exactly one targeting mode: selector, xpath, or x+y', () => {
+  for (const name of ['click', 'hover']) {
+    const tool = allTools.find(t => t.name === name);
+    assert.ok(tool, `${name} tool not found`);
+    const ok = (args: any) => tool.inputSchema.safeParse(args).success;
+
+    assert.equal(ok({ tabId: 't', selector: '#a' }), true, `${name}: selector`);
+    assert.equal(ok({ tabId: 't', xpath: '//a' }), true, `${name}: xpath`);
+    assert.equal(ok({ tabId: 't', x: 10, y: 20 }), true, `${name}: coordinates`);
+
+    assert.equal(ok({ tabId: 't' }), false, `${name}: no target`);
+    assert.equal(ok({ tabId: 't', selector: '#a', xpath: '//a' }), false, `${name}: both selector and xpath`);
+    assert.equal(ok({ tabId: 't', x: 10 }), false, `${name}: x without y`);
+    assert.equal(ok({ tabId: 't', selector: '#a', x: 10, y: 20 }), false, `${name}: selector and coordinates`);
+  }
+});
+
+// Tools without coordinate support keep the strict selector/xpath constraint
+test('selector/xpath-only tools still reject stray combinations', () => {
+  const tool = allTools.find(t => t.name === 'fill');
+  assert.ok(tool, 'fill tool not found');
+  const ok = (args: any) => tool.inputSchema.safeParse(args).success;
+
+  assert.equal(ok({ tabId: 't', selector: '#a', value: 'v' }), true);
+  assert.equal(ok({ tabId: 't', value: 'v' }), false, 'fill: no target');
+  assert.equal(ok({ tabId: 't', selector: '#a', xpath: '//a', value: 'v' }), false, 'fill: both');
+});

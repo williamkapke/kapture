@@ -1,27 +1,38 @@
 // Import helper functions from background-commands
 import { getFromContentScript, respondWithError, respondWithInputWarning, attachDebuggerFocused, getElement } from './background-commands.js';
 
-export async function click({tabId, mousePosition}, { selector, xpath }) {
-  return await hover({ tabId, mousePosition }, { selector, xpath }, true);
+export async function click({tabId, mousePosition}, { selector, xpath, x, y }) {
+  return await hover({ tabId, mousePosition }, { selector, xpath, x, y }, true);
 }
 
-export async function hover(tab, { selector, xpath }, click = false) {
+export async function hover(tab, { selector, xpath, x, y }, click = false) {
   const { tabId, mousePosition } = tab;
-  // Validate that either selector or xpath is provided
-  if (!selector && !xpath) {
-    return respondWithError(tabId, 'SELECTOR_OR_XPATH_REQUIRED', 'Either selector or xpath is required');
+  const hasCoords = typeof x === 'number' && typeof y === 'number';
+
+  // Validate that a target is provided
+  if (!selector && !xpath && !hasCoords) {
+    return respondWithError(tabId, 'SELECTOR_OR_XPATH_REQUIRED', 'Either selector, xpath, or x/y viewport coordinates are required');
   }
 
-  // Get element and validate it exists and is visible
-  const elementResult = await getElement(tabId, selector, xpath, true);
-  if (elementResult.error) return elementResult;
+  let elementResult = null;
+  let targetX, targetY;
+  if (hasCoords) {
+    // Coordinate target: dispatch at the point as-is. CDP input hit-tests at
+    // the browser level, so this reaches content selectors can't (iframes).
+    targetX = x;
+    targetY = y;
+  } else {
+    // Get element and validate it exists and is visible
+    elementResult = await getElement(tabId, selector, xpath, true);
+    if (elementResult.error) return elementResult;
+
+    // Calculate target position (center of element)
+    targetX = elementResult.element.bounds.x + elementResult.element.bounds.width / 2;
+    targetY = elementResult.element.bounds.y + elementResult.element.bounds.height / 2;
+  }
 
   // Get current mouse position
   const currentPosition = mousePosition || { x: 0, y: 0 };
-
-  // Calculate target position (center of element)
-  const targetX = elementResult.element.bounds.x + elementResult.element.bounds.width / 2;
-  const targetY = elementResult.element.bounds.y + elementResult.element.bounds.height / 2;
 
   try {
     // Show cursor
@@ -71,42 +82,47 @@ export async function hover(tab, { selector, xpath }, click = false) {
       // Initial animation to target
       let finalPosition = await animateToPosition(currentPosition.x, currentPosition.y, targetX, targetY);
 
-      // Try up to 5 times to ensure we're over the target element
-      const maxAttempts = 5;
-      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        const finalCheck = await getElement(tabId, selector, xpath, true);
-        if (!finalCheck.error && finalCheck.element) {
-          const bounds = finalCheck.element.bounds;
+      let actualTargetX = targetX;
+      let actualTargetY = targetY;
 
-          // Check if cursor is actually over the element
-          const isOverElement = finalPosition.x >= bounds.x &&
-                               finalPosition.x <= bounds.x + bounds.width &&
-                               finalPosition.y >= bounds.y &&
-                               finalPosition.y <= bounds.y + bounds.height;
+      if (elementResult) {
+        // Try up to 5 times to ensure we're over the target element
+        const maxAttempts = 5;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          const finalCheck = await getElement(tabId, selector, xpath, true);
+          if (!finalCheck.error && finalCheck.element) {
+            const bounds = finalCheck.element.bounds;
 
-          if (!isOverElement) {
-            // Calculate new target center and animate to it
-            const actualTargetX = bounds.x + bounds.width / 2;
-            const actualTargetY = bounds.y + bounds.height / 2;
-            finalPosition = await animateToPosition(finalPosition.x, finalPosition.y, actualTargetX, actualTargetY);
+            // Check if cursor is actually over the element
+            const isOverElement = finalPosition.x >= bounds.x &&
+                                 finalPosition.x <= bounds.x + bounds.width &&
+                                 finalPosition.y >= bounds.y &&
+                                 finalPosition.y <= bounds.y + bounds.height;
+
+            if (!isOverElement) {
+              // Calculate new target center and animate to it
+              const centerX = bounds.x + bounds.width / 2;
+              const centerY = bounds.y + bounds.height / 2;
+              finalPosition = await animateToPosition(finalPosition.x, finalPosition.y, centerX, centerY);
+            } else {
+              // Cursor is over the element, we're done
+              break;
+            }
           } else {
-            // Cursor is over the element, we're done
+            // Element not found, stop trying
             break;
           }
-        } else {
-          // Element not found, stop trying
-          break;
         }
-      }
 
-      const bounds = await getFromContentScript(tabId, '_elementPosition', { id: elementResult.element.id });
-      if (!bounds) {
-        // Element was removed from the DOM mid-command (e.g. the page re-rendered)
-        throw new Error(`Element disappeared before the ${click ? 'click' : 'hover'} completed`);
+        const bounds = await getFromContentScript(tabId, '_elementPosition', { id: elementResult.element.id });
+        if (!bounds) {
+          // Element was removed from the DOM mid-command (e.g. the page re-rendered)
+          throw new Error(`Element disappeared before the ${click ? 'click' : 'hover'} completed`);
+        }
+        actualTargetX = bounds.x + bounds.width / 2;
+        actualTargetY = bounds.y + bounds.height / 2;
+        await getFromContentScript(tabId, '_moveMouseSVG', { x: actualTargetX, y: actualTargetY });
       }
-      const actualTargetX = bounds.x + bounds.width / 2;
-      const actualTargetY = bounds.y + bounds.height / 2;
-      await getFromContentScript(tabId, '_moveMouseSVG', { x: actualTargetX, y: actualTargetY });
 
       if (click) {
         await dispatchMouseEvent({type: 'mousePressed', x: actualTargetX, y: actualTargetY, button: 'left', clickCount: 1});
@@ -119,7 +135,12 @@ export async function hover(tab, { selector, xpath }, click = false) {
       await getFromContentScript(tabId, '_cursor', { show: false });
     }, 1000);
 
-    return respondWithInputWarning(tabId, click ? { clicked: true } : { hovered: true }, selector, xpath);
+    const result = click ? { clicked: true } : { hovered: true };
+    if (hasCoords) {
+      result.x = targetX;
+      result.y = targetY;
+    }
+    return respondWithInputWarning(tabId, result, selector, xpath);
   } catch (error) {
     // Make sure cursor is hidden on error
     await getFromContentScript(tabId, '_cursor', { show: false });

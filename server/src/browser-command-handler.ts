@@ -151,6 +151,22 @@ export class BrowserCommandHandler {
       return this.executeCommand(NETWORK_TOOLS[toolName], args);
     }
 
+    if ((toolName === 'click' || toolName === 'hover') && args.x !== undefined) {
+      // Coordinate targeting landed in extension 1.2.0; older extensions
+      // ignore x/y and fail with a misleading "selector or xpath required".
+      // A missing tab falls through to executeCommand ("Tab not found").
+      const tab = this.tabRegistry.get(args.tabId);
+      if (tab && (!tab.version || !versionGte(tab.version, '1.2.0'))) {
+        return {
+          success: false,
+          error: {
+            code: 'EXTENSION_OUTDATED',
+            message: `The connected Kapture extension does not support coordinate ${toolName}s. Update the extension to the latest version, or target the element with a selector/xpath instead.`
+          }
+        };
+      }
+    }
+
     // Map tool names to command names (most are the same)
     const commandMap: { [key: string]: string } = {
       'console_logs': 'getLogs'

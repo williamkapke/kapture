@@ -96,6 +96,59 @@ describe('Click Tool Tests', function() {
     expect(resultData).to.have.property('selector').that.equals('#non-existent-element');
   });
 
+  it('should click at viewport coordinates', async function() {
+    // Find the button's center in viewport coordinates, then click blind
+    const elements = await framework.callToolAndParse('elements', {
+      selector: '#test-button'
+    });
+    const bounds = elements.elements[0].bounds;
+    const x = bounds.x + bounds.width / 2;
+    const y = bounds.y + bounds.height / 2;
+
+    const resultData = await framework.callToolAndParse('click', { x, y });
+
+    expectValidTabInfo(resultData);
+    expect(resultData).to.have.property('clicked').that.equals(true);
+    expect(resultData).to.have.property('x').that.equals(x);
+    expect(resultData).to.have.property('y').that.equals(y);
+    expect(resultData).to.not.have.property('selector');
+
+    // Wait for click to process
+    await delay(100);
+
+    // Verify the button was actually clicked by checking the DOM
+    const dom = await framework.callToolAndParse('dom', {
+      selector: '#click-result'
+    });
+    expect(dom.html).to.include('Test button clicked at');
+  });
+
+  it('should reject a coordinate click missing one axis', async function() {
+    let error;
+    try {
+      await framework.callToolAndParse('click', { x: 100 });
+    } catch (e) {
+      error = e;
+    }
+
+    // x and y must be paired (-32602 Invalid params)
+    expect(error, 'expected a validation error').to.exist;
+    expect(error.code).to.equal(-32602);
+  });
+
+  it('should reject coordinates combined with a selector', async function() {
+    let error;
+    try {
+      await framework.callToolAndParse('click', { selector: '#test-button', x: 100, y: 100 });
+    } catch (e) {
+      error = e;
+    }
+
+    // Targeting modes are mutually exclusive (-32602 Invalid params)
+    expect(error, 'expected a validation error').to.exist;
+    expect(error.code).to.equal(-32602);
+  });
+
   it('should require either selector or xpath', async function() {
     let error;
     try {
