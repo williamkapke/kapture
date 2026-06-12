@@ -167,6 +167,20 @@ export class BrowserCommandHandler {
       }
     }
 
+    if (toolName === 'dialog') {
+      // Dialog handling landed in extension 1.2.0
+      const tab = this.tabRegistry.get(args.tabId);
+      if (tab && (!tab.version || !versionGte(tab.version, '1.2.0'))) {
+        return {
+          success: false,
+          error: {
+            code: 'EXTENSION_OUTDATED',
+            message: 'The connected Kapture extension does not support the dialog tool. Update the extension to the latest version.'
+          }
+        };
+      }
+    }
+
     // Map tool names to command names (most are the same)
     const commandMap: { [key: string]: string } = {
       'console_logs': 'getLogs'
@@ -398,7 +412,11 @@ export class BrowserCommandHandler {
       const timeout = setTimeout(() => {
         this.pendingCommands.delete(commandId);
         logger.warn(`Command timeout for ${command} (${commandId})`);
-        reject(new Error(`Command timeout: ${command}`));
+        reject(new Error(
+          `Command timeout: ${command}. ` +
+          `A JavaScript dialog (alert/confirm/prompt) may be blocking this tab - ` +
+          `try the dialog tool (accept: true/false), or ask the user to check the tab.`
+        ));
       }, params.timeout || 5000);
 
       this.pendingCommands.set(commandId, { resolve, reject, timeout, tabId });

@@ -318,6 +318,25 @@ tools:
         type: number
         description: Absolute vertical scroll position in pixels (document coordinates, or within the element when a selector/xpath is given)
 
+  dialog:
+    description: >-
+      Respond to a JavaScript dialog (alert, confirm, prompt, or
+      onbeforeunload) that is blocking the tab. A dialog freezes the page -
+      while one is open every other command fails fast with DIALOG_OPEN, and
+      the command that triggered it returns a `dialog` field with its type
+      and message. accept true presses OK/Leave, false presses Cancel/Stay
+      (alerts close either way). For prompt() dialogs, text supplies the
+      value to type before accepting.
+    required: [tabId, accept]
+    properties:
+      tabId: *tabId
+      accept:
+        type: boolean
+        description: true presses OK/Leave; false presses Cancel/Stay (alerts close either way)
+      text:
+        type: string
+        description: Text to enter into a prompt() dialog before accepting
+
   elementsFromPoint:
     description: Get information about all elements at a specific coordinate in the viewport
     required: [tabId, x, y]

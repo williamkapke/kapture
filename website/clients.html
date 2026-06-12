@@ -310,6 +310,8 @@
         fields: [{ name: 'key', placeholder: 'e.g. Enter, Control+a', required: true }, ...SELECTOR_FIELDS, { name: 'delay', type: 'number', placeholder: '50' }] },
       { group: 'Interaction', name: 'scroll', method: 'POST', path: '/scroll', desc: 'Scroll an element into view, or to an x/y coordinate',
         fields: [...SELECTOR_FIELDS, { name: 'x', type: 'number', placeholder: 'x px' }, { name: 'y', type: 'number', placeholder: 'y px' }] },
+      { group: 'Interaction', name: 'dialog', method: 'POST', path: '/dialog', desc: 'Answer a JavaScript dialog (alert/confirm/prompt) blocking the tab',
+        fields: [{ name: 'accept', type: 'boolean', options: ['true', 'false'], required: true }, { name: 'text', placeholder: 'Text for prompt()' }] },
 
       // JavaScript execution (gated by the "Allow JS execution" toggle in the extension)
       { group: 'JavaScript', name: 'evaluate', method: 'POST', path: '/evaluate', desc: 'Execute JavaScript in the page (requires "Allow JS execution" in the extension)',

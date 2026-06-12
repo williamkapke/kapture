@@ -606,6 +606,16 @@ graph LR
   // OR: { selector: "#sidebar", y: 500 }  // scroll within the element
 }</code></pre>
             </div>
+
+            <div class="tool-card">
+                <h4>dialog</h4>
+                <p>Answer a JavaScript dialog (alert, confirm, prompt, onbeforeunload) blocking the tab. The command that triggered it returns a <code>dialog</code> field; every other command fails fast with <code>DIALOG_OPEN</code> until you respond.</p>
+                <pre><code>{
+  tabId: "tab_1234567890",
+  accept: true            // OK / Leave; false = Cancel / Stay
+  // text: "..."          // value for prompt() dialogs
+}</code></pre>
+            </div>
         </div>
 
         <h3>Information Tools</h3>

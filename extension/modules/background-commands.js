@@ -6,6 +6,7 @@ import { getLogs, watchConsole } from './background-console.js';
 import { networkMonitor, networkRequests, networkBody } from './background-network.js';
 import { evaluate } from './background-evaluate.js';
 import { type, insertText, clear } from './background-text.js';
+import { dialog } from './background-dialog.js';
 
 export const getFromContentScript = async (tabId, command, params, ) => {
   return await chrome.tabs.sendMessage(tabId, { command, params });
@@ -164,5 +165,6 @@ export const backgroundCommands = {
   evaluate,
   type,
   insertText,
-  clear
+  clear,
+  dialog
 }

@@ -40,12 +40,17 @@
 <section class="page"><div class="wrap"><article class="doc">
   <span class="eyebrow">Version 1.2</span>
   <h1>Click anywhere</h1>
-  <p class="lead">Kapture can now click and hover at a plain viewport coordinate — no selector required. Calculate a position from a screenshot, click it, done.</p>
+  <p class="lead">Kapture can now click and hover at a plain viewport coordinate — no selector required. And when a page throws up an alert, the agent is no longer stuck: it sees the dialog and answers it.</p>
 
   <div class="callout">
     <h3>Coordinate clicks reach inside iframes</h3>
     <p>Pass <code>x</code> and <code>y</code> (CSS viewport pixels) to <code>click</code> or <code>hover</code> instead of a selector. The events dispatch through the browser's input pipeline, so they hit whatever is at that point — including content inside iframes, which selectors have never been able to reach.</p>
     <p style="margin-top:14px"><a class="btn btn-ghost btn-sm" href="MCP_USAGE.html#available-tools"><i data-lucide="arrow-right"></i> Read the docs</a></p>
+  </div>
+
+  <div class="callout">
+    <h3>Dialogs no longer kill the run</h3>
+    <p>An unexpected <code>alert</code>, <code>confirm</code>, or <code>prompt</code> freezes the page — and until now, every command after it just timed out while the assistant sat in the dark. Now the command that triggered the dialog returns immediately with its type and message, every other command fails fast with a <code>DIALOG_OPEN</code> error saying exactly what to do, and the new <code>dialog</code> tool answers it: OK or Cancel, with typed text for prompts. Unsaved-changes (<code>onbeforeunload</code>) dialogs work the same way.</p>
   </div>
 
   <hr>

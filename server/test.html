@@ -239,6 +239,14 @@
                     <a href="#anchor1" id="test-link">Test Link</a>
                     <div id="click-result" style="margin-top: 10px; color: green;"></div>
                 </div>
+
+                <h3>Dialog Tests</h3>
+                <div>
+                    <button id="alert-button" onclick="alert('Alert test message'); document.getElementById('dialog-result').textContent = 'alert: closed'">Trigger Alert</button>
+                    <button id="confirm-button" onclick="document.getElementById('dialog-result').textContent = 'confirm: ' + confirm('Confirm test?')">Trigger Confirm</button>
+                    <button id="prompt-button" onclick="document.getElementById('dialog-result').textContent = 'prompt: ' + prompt('Prompt test?', 'default text')">Trigger Prompt</button>
+                    <div id="dialog-result" style="margin-top: 10px; color: green;"></div>
+                </div>
             </div>
 
             <!-- Column 2: Form Elements -->

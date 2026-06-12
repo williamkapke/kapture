@@ -1,6 +1,11 @@
 import { TabState } from './tab-state.js';
 import { backgroundCommands, getTabInfo, detectBrowser } from './background-commands.js';
 import { stopNetworkMonitor } from './background-network.js';
+import { getPendingDialog, dialogOpened, clearPendingDialog, dialogInterruptResult, dialogBlockedError } from './background-dialog.js';
+
+// Commands that still work (and are useful) while a JS dialog blocks the
+// renderer: answering the dialog, and browser-level tab actions.
+const DIALOG_EXEMPT_COMMANDS = new Set(['dialog', 'show', 'close']);
 
 export class TabManager {
   constructor() {
@@ -217,6 +222,10 @@ export class TabManager {
       // dead connection means nobody can ever turn it off otherwise.
       stopNetworkMonitor(tabState.tabId).catch(() => {});
 
+      // Forget any pending dialog so its debugger ref isn't held forever -
+      // nothing can command this tab anymore; the user handles the dialog.
+      clearPendingDialog(tabState.tabId);
+
       tabState.clearWebSocket();
 
       if (!tabState.connectionInfo.userDisconnected) {
@@ -297,13 +306,27 @@ export class TabManager {
   async _handleCommand(tabState, {command, params, id}) {
     try {
       let result;
-      // some need to run with the background context
-      if (backgroundCommands[command]) {
-        result = await backgroundCommands[command](tabState, params);
+      const openDialog = getPendingDialog(tabState.tabId);
+      if (openDialog && !DIALOG_EXEMPT_COMMANDS.has(command)) {
+        // Fail fast: a dialog freezes the renderer, so this command would
+        // only hang into a timeout. Tell the caller what to do instead.
+        result = dialogBlockedError(openDialog);
       }
-      // others we execute in the page context
       else {
-        result = await chrome.tabs.sendMessage(tabState.tabId, {command, params});
+        // Race the command against a dialog opening mid-flight (e.g. a click
+        // whose handler calls confirm()) - the command would never return.
+        const watch = dialogOpened(tabState.tabId);
+        try {
+          const run = backgroundCommands[command]
+            ? backgroundCommands[command](tabState, params) // background context
+            : chrome.tabs.sendMessage(tabState.tabId, {command, params}); // page context
+          result = await Promise.race([
+            run,
+            watch.promise.then(dialogInterruptResult)
+          ]);
+        } finally {
+          watch.disarm();
+        }
       }
       // `success: true` means we didn't throw an error. TODO: rename or remove it
       const response = {id, type: 'response', success: true, result};

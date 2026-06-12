@@ -66,3 +66,16 @@ test('a coordinate click on an unknown tab is not masked as outdated', async () 
     /Tab gone-tab not found/
   );
 });
+
+test('dialog passes through on extension 1.2.0 and is gated below it', async () => {
+  const { handler, sent } = makeHandler();
+
+  const result = await handler.callTool('dialog', { tabId: 'new-tab', accept: true });
+  assert.equal(result.success, true);
+  assert.equal(sent.length, 1);
+
+  const outdated = await handler.callTool('dialog', { tabId: 'old-tab', accept: true });
+  assert.equal(outdated.success, false);
+  assert.equal(outdated.error.code, 'EXTENSION_OUTDATED');
+  assert.equal(sent.length, 1); // nothing further forwarded
+});
