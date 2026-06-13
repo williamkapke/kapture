@@ -129,6 +129,8 @@
     .api-body { padding: 16px; }
     .api-fields { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
     .api-fields label { display: flex; flex-direction: column; font-size: 0.75rem; font-weight: 600; color: #718096; gap: 2px; }
+    .api-fields label:has(textarea) { flex-basis: 100%; }
+    .api-fields textarea { width: 100%; box-sizing: border-box; resize: vertical; }
     .api-result {
       display: none;
       margin-top: 14px;
@@ -645,7 +647,11 @@
 
         status.classList.add('ok');
         status.textContent = '200 ' + def.method + ' ' + url;
-        output.append(el('pre', { textContent: pretty(data) }));
+        // A compose script ending in a screenshot returns the image inline as
+        // a dataUrl - render it instead of dumping the base64 into the JSON.
+        const { display, images } = extractImages(data);
+        output.append(el('pre', { textContent: pretty(display) }));
+        for (const src of images) output.append(el('img', { src }));
         if (def.name === 'close') location.hash = '#/';
       } catch (error) {
         status.classList.add('err');
@@ -658,6 +664,24 @@
       } finally {
         button.disabled = false;
       }
+    }
+
+    // Pull inline screenshot data URLs out of a result so they render as
+    // images instead of dumping a huge base64 string into the JSON view.
+    function extractImages(data) {
+      const images = [];
+      const scrub = (obj) => {
+        if (!obj || typeof obj !== 'object') return obj;
+        if (Array.isArray(obj)) return obj.map(scrub);
+        if (typeof obj.dataUrl === 'string' && obj.dataUrl.startsWith('data:image/')) {
+          images.push(obj.dataUrl);
+          return { ...obj, dataUrl: '[image rendered below]' };
+        }
+        const out = {};
+        for (const [k, v] of Object.entries(obj)) out[k] = scrub(v);
+        return out;
+      };
+      return { display: scrub(data), images };
     }
 
     function pretty(data) {

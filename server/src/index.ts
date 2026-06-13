@@ -110,11 +110,29 @@ function readJsonBody(req: import('http').IncomingMessage): Promise<any> {
 async function handleHttpToolCall(res: import('http').ServerResponse, name: string, args: any): Promise<void> {
   try {
     const result = await toolHandler.callTool(name, args);
-    const text = result.content[0].text;
+    let text = result.content[0].text;
     let status = 200;
     if (result.isError) {
       const message = JSON.parse(text)?.error?.message || '';
       status = message.includes('not found') ? 404 : 500;
+    }
+    // A tool that returns an image (compose ending in a screenshot) carries the
+    // pixels in a separate image content block. HTTP callers get JSON only, so
+    // fold the image into the JSON as a data URL on the terminal result. The
+    // screenshot's `preview` URL can't be used for this - fetching it re-runs
+    // the screenshot, losing the post-action state compose just captured.
+    const image = !result.isError && result.content.find((c: any) => c.type === 'image');
+    if (image) {
+      try {
+        const parsed = JSON.parse(text);
+        const dataUrl = `data:${image.mimeType};base64,${image.data}`;
+        if (Array.isArray(parsed) && parsed.length) {
+          parsed[parsed.length - 1].dataUrl = dataUrl; // compose: the screenshot step
+        } else if (parsed && typeof parsed === 'object') {
+          parsed.dataUrl = dataUrl;
+        }
+        text = JSON.stringify(parsed, null, 2);
+      } catch { /* leave text as-is if it isn't JSON */ }
     }
     res.writeHead(status, { 'Content-Type': 'application/json' });
     res.end(text);
