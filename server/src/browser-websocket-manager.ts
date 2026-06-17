@@ -99,7 +99,9 @@ export class BrowserWebSocketManager {
       });
 
       ws.on('close', (e) => {
-        console.log('Connection closed', e);
+        // Must use logger (stderr), not console.log (stdout): when the bridge
+        // hosts this server in-process, stdout is the MCP JSON-RPC channel.
+        logger.log('Connection closed', e);
         clearInterval(pingInterval);
         const connection = this.tabRegistry.findByWebSocket(ws);
         if (connection) {
