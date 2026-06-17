@@ -6,7 +6,7 @@ import { dirname, join } from 'path';
 import { createRequire } from 'module';
 import { openSync } from 'fs';
 import { tmpdir } from 'os';
-import { probe, waitForPort } from './bridge-lib.js';
+import { ensureServer } from './bridge-lib.js';
 
 process.title = 'Kapture MCP Bridge';
 
@@ -71,29 +71,54 @@ class ReplayingMCPWebSocketBridge extends MCPWebSocketBridge {
 const serverPath = join(__dirname, 'index.js');
 const logPath = join(tmpdir(), 'kapture-server.log');
 
-async function main() {
-  // Probe before spawning: if a server (or an external supervisor) is already
-  // listening, skip the spawn entirely so the bridge is idempotent and tolerant
-  // of environments where the detached child can't take (e.g. Claude Desktop's
-  // built-in Node runtime). See issue #7.
-  if (!(await probe(HOST, PORT))) {
-    // Capture the child's stderr to a log file instead of discarding it, so a
-    // failed spawn is diagnosable rather than silent.
-    const log = openSync(logPath, 'a');
-    const serverProcess = spawn(process.execPath, [serverPath], {
-      detached: true,
-      stdio: ['ignore', log, log]
-    });
-    serverProcess.on('error', (error) => {
-      console.error('Failed to spawn Kapture server:', error);
-    });
-    serverProcess.unref();
-  }
+// Best-effort: spawn a standalone server as a detached child. Keeps the
+// shared-server model (multiple MCP clients, one server, same browser tabs)
+// when the host can keep a detached child alive. See issue #7.
+function spawnDetachedServer() {
+  // Capture the child's output to a log file, never our stdout (which is the
+  // MCP JSON-RPC channel), so a failed spawn is diagnosable rather than silent.
+  const log = openSync(logPath, 'a');
+  const serverProcess = spawn(process.execPath, [serverPath], {
+    detached: true,
+    stdio: ['ignore', log, log],
+    // If this host runs us under Electron's Node (e.g. Claude Desktop),
+    // process.execPath is the Electron binary; ELECTRON_RUN_AS_NODE makes the
+    // child run as plain Node instead of launching the desktop app. It is a
+    // no-op under a real node. Hosts that still can't keep the child alive fall
+    // through to the in-process path in ensureServer.
+    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+  });
+  serverProcess.on('error', (error) => {
+    console.error('Failed to spawn Kapture server:', error);
+  });
+  serverProcess.unref();
+}
 
-  // Wait for the server to actually bind the port instead of a fixed delay,
-  // and fail loudly if it never comes up rather than hanging on the WebSocket
-  // connect (which surfaces to the client as a silent ~60s timeout).
-  if (!(await waitForPort(HOST, PORT))) {
+// Host the server inside this process. The module auto-starts only as the
+// process entrypoint, so importing it here does not start a second listener;
+// we call its exported startServer() explicitly.
+async function startServerInProcess() {
+  const { startServer } = await import('./index.js');
+  await startServer();
+}
+
+async function main() {
+  // Make sure a server is listening: reuse an already-running one, else spawn a
+  // detached child, else host it in-process. The in-process fallback is the fix
+  // for issue #13 ("Unable to connect to extension server"): under hosts whose
+  // bundled Node runtime cannot keep a detached child alive (e.g. Claude
+  // Desktop), the spawned server never binds the port, and the bridge used to
+  // give up with exit(1). console.error (stderr) is safe; stdout is the MCP
+  // channel.
+  const outcome = await ensureServer({
+    host: HOST,
+    port: PORT,
+    spawnDetached: spawnDetachedServer,
+    startInProcess: startServerInProcess,
+    log: (message) => console.error(message),
+  });
+
+  if (outcome === 'failed') {
     console.error(
       `Kapture server never bound ${HOST}:${PORT}. See ${logPath} for details.`
     );

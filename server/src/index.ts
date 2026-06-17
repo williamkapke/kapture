@@ -3,8 +3,9 @@
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 import { readFile } from 'fs/promises';
+import { realpathSync } from 'fs';
 import { join } from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname } from 'path';
 import { TabRegistry } from './tab-registry.js';
 import { BrowserWebSocketManager } from './browser-websocket-manager.js';
@@ -321,12 +322,6 @@ const httpServer = createServer(async (req, res) => {
   res.end(JSON.stringify({ error: 'Not found' }));
 });
 
-// HTTP server error handling
-httpServer.on('error', (error) => {
-  logger.error('HTTP server error:', error);
-  process.exit(1);
-});
-
 // ========================================================================
 // WebSocket Setup
 // ========================================================================
@@ -357,30 +352,68 @@ wss.on('connection', (ws, request) => {
 // ========================================================================
 
 /**
- * Start the HTTP server and log available endpoints
+ * Print the human-readable endpoint banner to stdout.
+ *
+ * Only safe to call from the standalone entrypoint: when the bridge hosts the
+ * server in-process, stdout is the MCP JSON-RPC channel and any stray write
+ * corrupts the protocol. The in-process path therefore never calls this.
  */
-async function startServer() {
-  await checkIfPortInUse(PORT);
+function printStartupBanner() {
+  console.log('='.repeat(70));
+  console.log('Kapture MCP Server Started');
+  console.log();
+  console.log('HTTP Endpoints:');
+  console.log(`  MCP clients: http://127.0.0.1:${PORT}/clients`);
+  console.log(`  Resources: http://127.0.0.1:${PORT}/tabs`);
+  console.log(`  Tab info: http://127.0.0.1:${PORT}/tab/{tabId}`);
+  console.log(`  Console: http://127.0.0.1:${PORT}/tab/{tabId}/console`);
+  console.log(`  Screenshot: http://127.0.0.1:${PORT}/tab/{tabId}/screenshot`);
+  console.log(`  View image: http://127.0.0.1:${PORT}/tab/{tabId}/screenshot/view`);
+  console.log(`  Elements: http://127.0.0.1:${PORT}/tab/{tabId}/elements`);
+  console.log(`  Point query: http://127.0.0.1:${PORT}/tab/{tabId}/elementsFromPoint`);
+  console.log(`  DOM: http://127.0.0.1:${PORT}/tab/{tabId}/dom`);
+  console.log(`  Commands: POST http://127.0.0.1:${PORT}/tab/{tabId}/{command}`);
+  console.log(`  New tab: POST http://127.0.0.1:${PORT}/tabs`);
+  console.log(`  Close tab: DELETE http://127.0.0.1:${PORT}/tab/{tabId}`);
+  console.log('='.repeat(70));
+}
 
-  httpServer.listen(PORT, '127.0.0.1', () => {
-    console.log('='.repeat(70));
-    console.log('Kapture MCP Server Started');
-    console.log();
-    console.log('HTTP Endpoints:');
-    console.log(`  MCP clients: http://127.0.0.1:${PORT}/clients`);
-    console.log(`  Resources: http://127.0.0.1:${PORT}/tabs`);
-    console.log(`  Tab info: http://127.0.0.1:${PORT}/tab/{tabId}`);
-    console.log(`  Console: http://127.0.0.1:${PORT}/tab/{tabId}/console`);
-    console.log(`  Screenshot: http://127.0.0.1:${PORT}/tab/{tabId}/screenshot`);
-    console.log(`  View image: http://127.0.0.1:${PORT}/tab/{tabId}/screenshot/view`);
-    console.log(`  Elements: http://127.0.0.1:${PORT}/tab/{tabId}/elements`);
-    console.log(`  Point query: http://127.0.0.1:${PORT}/tab/{tabId}/elementsFromPoint`);
-    console.log(`  DOM: http://127.0.0.1:${PORT}/tab/{tabId}/dom`);
-    console.log(`  Commands: POST http://127.0.0.1:${PORT}/tab/{tabId}/{command}`);
-    console.log(`  New tab: POST http://127.0.0.1:${PORT}/tabs`);
-    console.log(`  Close tab: DELETE http://127.0.0.1:${PORT}/tab/{tabId}`);
-    console.log('='.repeat(70));
+/**
+ * Start the HTTP/WebSocket server and resolve once it is listening on
+ * 127.0.0.1:PORT, or reject if the socket fails to bind.
+ *
+ * Unlike the standalone entrypoint below, this neither writes to stdout nor
+ * exits the process, so the bridge can host the server in-process (where
+ * stdout is the MCP stdio channel and the process must stay alive) as a
+ * fallback when it cannot keep a detached child running. See issue #13.
+ */
+export function startServer(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onError = (error: Error) => reject(error);
+    httpServer.once('error', onError);
+    httpServer.listen(PORT, '127.0.0.1', () => {
+      httpServer.removeListener('error', onError);
+      // Once bound, log later errors instead of crashing the (possibly shared
+      // with the bridge) process.
+      httpServer.on('error', (error) => logger.error('HTTP server error:', error));
+      resolve();
+    });
   });
+}
+
+/**
+ * True when this module is the process entrypoint (`node dist/index.js`, which
+ * is also how the bridge spawns the standalone server), as opposed to being
+ * imported by the bridge for in-process hosting.
+ */
+function isMainModule(): boolean {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return import.meta.url === pathToFileURL(realpathSync(entry)).href;
+  } catch {
+    return false;
+  }
 }
 
 // ========================================================================
@@ -410,4 +443,19 @@ process.on('SIGINT', () => {
 // Start the server
 // ========================================================================
 
-startServer();
+// Only auto-start when run as the process entrypoint (standalone, or the
+// detached child the bridge spawns). When imported in-process by the bridge,
+// the bridge calls startServer() itself and handles failures, so importing
+// this module must not start listening, print to stdout, or exit.
+if (isMainModule()) {
+  (async () => {
+    await checkIfPortInUse(PORT);
+    try {
+      await startServer();
+      printStartupBanner();
+    } catch (error) {
+      logger.error('Failed to start Kapture server:', error);
+      process.exit(1);
+    }
+  })();
+}
