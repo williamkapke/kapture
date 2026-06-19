@@ -16,6 +16,7 @@ import { ResourceHandler } from './resource-handler.js';
 import { ToolHandler } from './tool-handler.js';
 import { checkIfPortInUse } from './port-check.js';
 import { detectAssistants, configureAssistants } from './assistant-manager.js';
+import { isOriginAllowed, isWebSocketOriginAllowed } from './origin-policy.js';
 
 
 // ========================================================================
@@ -146,17 +147,37 @@ async function handleHttpToolCall(res: import('http').ServerResponse, name: stri
 }
 
 const httpServer = createServer(async (req, res) => {
-  // Enable CORS for all endpoints
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Enforce the Origin allow-list (origin-policy.ts).
+  const origin = req.headers.origin;
+  const originAllowed = isOriginAllowed(origin);
+
+  // Reflect the Origin only when allow-listed - never a wildcard.
+  if (typeof origin === 'string') {
+    res.setHeader('Vary', 'Origin');
+    if (originAllowed) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    // Allow requests from public (https) pages to this local server (Chrome Private Network Access)
+    if (!originAllowed) {
+      res.writeHead(403);
+      res.end();
+      return;
+    }
+    // Private Network Access (Chrome), allow-listed origins only.
     res.setHeader('Access-Control-Allow-Private-Network', 'true');
-    res.writeHead(200);
+    res.writeHead(204);
     res.end();
+    return;
+  }
+
+  if (!originAllowed) {
+    res.writeHead(403, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Origin not allowed' }));
     return;
   }
 
@@ -346,6 +367,14 @@ const httpServer = createServer(async (req, res) => {
 
 // Handle WebSocket upgrade requests
 httpServer.on('upgrade', (request, socket, head) => {
+  // Origin allow-list on the WebSocket handshake, scoped by path (origin-policy.ts).
+  const pathname = (request.url || '/').split('?')[0];
+  if (!isWebSocketOriginAllowed(pathname, request.headers.origin)) {
+    logger.warn(`Rejected WebSocket upgrade (path=${pathname}, origin=${request.headers.origin})`);
+    socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+    socket.destroy();
+    return;
+  }
   wss.handleUpgrade(request, socket, head, (ws) => {
     wss.emit('connection', ws, request);
   });
