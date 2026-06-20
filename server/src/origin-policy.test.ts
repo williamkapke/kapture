@@ -1,15 +1,32 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isOriginAllowed, isWebSocketOriginAllowed, parseAllowedOrigins } from './origin-policy.js';
+import { isOriginAllowed, isWebSocketOriginAllowed, parseAllowedOrigins, parseExtensionIds } from './origin-policy.js';
 
 // Tests for the control-plane Origin allow-list (origin-policy.ts).
+
+// The pinned Web Store extension ID; an unrelated extension ID must NOT pass.
+const EXT = 'chrome-extension://ejfnegenodbdcodemkibocefmajjjjbn';
+const OTHER_EXT = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop';
 
 test('non-browser callers (no Origin) are allowed - scripts, bridge, curl', () => {
   assert.equal(isOriginAllowed(undefined), true);
 });
 
-test('the extension (chrome-extension://) is allowed', () => {
-  assert.equal(isOriginAllowed('chrome-extension://abcdefghijklmnopabcdefghijklmnop'), true);
+test('the pinned Kapture extension is allowed', () => {
+  assert.equal(isOriginAllowed(EXT), true);
+});
+
+test('an unrelated extension ID is rejected (extension origin is pinned)', () => {
+  assert.equal(isOriginAllowed(OTHER_EXT), false);
+  for (const path of ['/', '/mcp']) {
+    assert.equal(isWebSocketOriginAllowed(path, OTHER_EXT), false);
+  }
+});
+
+test('KAPTURE_EXTENSION_IDS adds extra extension IDs', () => {
+  const ids = parseExtensionIds('abcdefghijklmnopabcdefghijklmnop');
+  assert.ok(ids.has('ejfnegenodbdcodemkibocefmajjjjbn')); // default still present
+  assert.ok(ids.has('abcdefghijklmnopabcdefghijklmnop'));
 });
 
 test('allow-listed web origins are allowed', () => {
@@ -37,9 +54,8 @@ test('a duplicated Origin header (array) is rejected', () => {
 // extension's chrome-extension:// origin is accepted on the root path (where it
 // connects) but not on /mcp (only no-Origin MCP clients use that path).
 test('WS: extension origin is accepted on root but rejected on /mcp', () => {
-  const ext = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop';
-  assert.equal(isWebSocketOriginAllowed('/', ext), true);
-  assert.equal(isWebSocketOriginAllowed('/mcp', ext), false);
+  assert.equal(isWebSocketOriginAllowed('/', EXT), true);
+  assert.equal(isWebSocketOriginAllowed('/mcp', EXT), false);
 });
 
 test('WS: no-Origin clients (the bridge / scripts) are accepted on /mcp', () => {

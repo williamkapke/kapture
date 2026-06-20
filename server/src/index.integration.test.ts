@@ -15,8 +15,9 @@ process.env.KAPTURE_PORT = String(PORT);
 
 const BASE = `http://127.0.0.1:${PORT}`;
 const WS_BASE = `ws://127.0.0.1:${PORT}`;
-const EXT = 'chrome-extension://ejfnegenodbdcodemkibocefmajjjjbn'; // the Kapture extension
-const GOOD = 'https://williamkapke.github.io';                     // allow-listed
+const EXT = 'chrome-extension://ejfnegenodbdcodemkibocefmajjjjbn';       // pinned Kapture ID
+const OTHER_EXT = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop'; // some other extension
+const GOOD = 'https://williamkapke.github.io';                          // allow-listed
 const EVIL = 'https://evil.example';
 
 let startServer: () => Promise<void>;
@@ -84,14 +85,27 @@ test('HTTP preflight: hostile OPTIONS is rejected with 403', async () => {
   assert.equal(res.status, 403);
 });
 
+test('HTTP: /assistants/configure is disabled unless opted in', async () => {
+  const res = await fetch(`${BASE}/assistants/configure`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}',
+  });
+  assert.equal(res.status, 403);
+});
+
 // ---- WebSocket upgrade -----------------------------------------------------
 
 test('WS: hostile origin upgrade is rejected (no 101)', async () => {
   assert.notEqual(await wsStatus('/', EVIL), 101);
 });
 
-test('WS: extension origin is accepted on the root path', async () => {
+test('WS: pinned extension origin is accepted on the root path', async () => {
   assert.equal(await wsStatus('/', EXT), 101);
+});
+
+test('WS: an unrelated extension origin is rejected (pinned)', async () => {
+  assert.notEqual(await wsStatus('/', OTHER_EXT), 101);
 });
 
 test('WS: extension origin is rejected on /mcp', async () => {

@@ -25,8 +25,35 @@ export function parseAllowedOrigins(
 
 const ALLOWED_ORIGINS = parseAllowedOrigins();
 
-const isExtensionOrigin = (origin: string | string[] | undefined): boolean =>
-  typeof origin === 'string' && origin.startsWith('chrome-extension://');
+// The published Web Store build's extension ID. Pinning to it means a *different*
+// installed extension cannot drive Kapture just by virtue of being an extension.
+// A self-built / dev-loaded extension gets a different ID, so allow extra IDs via
+// KAPTURE_EXTENSION_IDS="aaaa...,bbbb..." for that case.
+const DEFAULT_EXTENSION_IDS = [
+  'ejfnegenodbdcodemkibocefmajjjjbn', // Kapture MCP Browser Automation (Web Store)
+];
+
+export function parseExtensionIds(
+  env: string | undefined = process.env.KAPTURE_EXTENSION_IDS,
+): Set<string> {
+  return new Set([
+    ...DEFAULT_EXTENSION_IDS,
+    ...(env || '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean),
+  ]);
+}
+
+const ALLOWED_EXTENSION_IDS = parseExtensionIds();
+
+const isExtensionOrigin = (
+  origin: string | string[] | undefined,
+  ids: Set<string> = ALLOWED_EXTENSION_IDS,
+): boolean =>
+  typeof origin === 'string' &&
+  origin.startsWith('chrome-extension://') &&
+  ids.has(origin.slice('chrome-extension://'.length));
 
 export function isOriginAllowed(
   origin: string | string[] | undefined,

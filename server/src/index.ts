@@ -244,6 +244,13 @@ const httpServer = createServer(async (req, res) => {
 
   // Handle /assistants/configure endpoint
   if (req.url === '/assistants/configure' && req.method === 'POST') {
+    // This writes MCP-client config files on disk. Even behind the Origin gate,
+    // a no-Origin local caller can reach it, so keep it off unless opted in.
+    if (process.env.KAPTURE_ENABLE_ASSISTANT_CONFIG !== '1') {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Assistant configuration is disabled. Set KAPTURE_ENABLE_ASSISTANT_CONFIG=1 to enable.' }));
+      return;
+    }
     try {
       let body = '';
       req.on('data', chunk => {
