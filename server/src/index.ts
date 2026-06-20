@@ -26,8 +26,9 @@ import { isOriginAllowed, isWebSocketOriginAllowed } from './origin-policy.js';
 // Set process title for better identification
 process.title = 'Kapture MCP Server';
 
-// Fixed port for all connections
-const PORT = 61822;
+// Fixed port for all connections (overridable via KAPTURE_PORT for tests /
+// non-default deployments; the extension still defaults to 61822).
+const PORT = Number(process.env.KAPTURE_PORT) || 61822;
 
 // Get directory path for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -371,8 +372,8 @@ httpServer.on('upgrade', (request, socket, head) => {
   const pathname = (request.url || '/').split('?')[0];
   if (!isWebSocketOriginAllowed(pathname, request.headers.origin)) {
     logger.warn(`Rejected WebSocket upgrade (path=${pathname}, origin=${request.headers.origin})`);
-    socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
-    socket.destroy();
+    // end() (not write()+destroy()) so the 403 bytes flush before the socket closes.
+    socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
     return;
   }
   wss.handleUpgrade(request, socket, head, (ws) => {
@@ -445,6 +446,16 @@ export function startServer(): Promise<void> {
       httpServer.on('error', (error) => logger.error('HTTP server error:', error));
       resolve();
     });
+  });
+}
+
+/**
+ * Stop the HTTP/WebSocket server. Mirrors startServer() so tests (and embedders)
+ * can shut the listener down and release the port.
+ */
+export function stopServer(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    httpServer.close((err) => (err ? reject(err) : resolve()));
   });
 }
 
