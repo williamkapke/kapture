@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isOriginAllowed, isWebSocketOriginAllowed, parseAllowedOrigins, isAssistantsReadOrigin, isAssistantsWriteOrigin } from './origin-policy.js';
+import { isOriginAllowed, isWebSocketOriginAllowed, parseAllowedOrigins, isAssistantsReadOrigin, isAssistantsWriteOrigin, KAPTURE_EXTENSION_ID } from './origin-policy.js';
 
 // Tests for the control-plane Origin allow-list (origin-policy.ts).
 
-const EXT = 'chrome-extension://ejfnegenodbdcodemkibocefmajjjjbn';
+const EXT = `chrome-extension://${KAPTURE_EXTENSION_ID}`;
 const OTHER_EXT = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop';
 
 test('non-browser callers (no Origin) are allowed - scripts, bridge, curl', () => {
@@ -40,9 +40,9 @@ test('a duplicated Origin header (array) is rejected', () => {
 
 // The extension's one channel is the root WebSocket. A chrome-extension origin is
 // accepted there and nowhere else - not on /mcp, not on HTTP.
-test('WS root: a chrome-extension origin is accepted', () => {
+test('WS root: only the pinned Kapture extension is accepted', () => {
   assert.equal(isWebSocketOriginAllowed('/', EXT), true);
-  assert.equal(isWebSocketOriginAllowed('/', OTHER_EXT), true);
+  assert.equal(isWebSocketOriginAllowed('/', OTHER_EXT), false);
 });
 
 test('WS /mcp: no chrome-extension origin is accepted', () => {

@@ -1,6 +1,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { WebSocket } from 'ws';
+import { KAPTURE_EXTENSION_ID } from './origin-policy.js';
 
 // Integration tests for the control-plane security wiring in index.ts: the HTTP
 // handler and the WebSocket upgrade gate, exercised over a real socket. The
@@ -15,7 +16,7 @@ process.env.KAPTURE_PORT = String(PORT);
 
 const BASE = `http://127.0.0.1:${PORT}`;
 const WS_BASE = `ws://127.0.0.1:${PORT}`;
-const EXT = 'chrome-extension://ejfnegenodbdcodemkibocefmajjjjbn';       // the Kapture extension
+const EXT = `chrome-extension://${KAPTURE_EXTENSION_ID}`;                 // the Kapture extension
 const OTHER_EXT = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop'; // another extension
 const GOOD = 'https://williamkapke.github.io';                          // allow-listed
 const EVIL = 'https://evil.example';
@@ -115,9 +116,12 @@ test('WS: hostile origin upgrade is rejected (no 101)', async () => {
   assert.notEqual(await wsStatus('/', EVIL), 101);
 });
 
-test('WS: a chrome-extension origin is accepted on the root path', async () => {
+test('WS: the pinned extension is accepted on the root path', async () => {
   assert.equal(await wsStatus('/', EXT), 101);
-  assert.equal(await wsStatus('/', OTHER_EXT), 101);
+});
+
+test('WS: an unrelated extension is rejected on the root path', async () => {
+  assert.notEqual(await wsStatus('/', OTHER_EXT), 101);
 });
 
 test('WS: no extension origin is accepted on /mcp', async () => {

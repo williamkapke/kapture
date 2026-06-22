@@ -26,8 +26,12 @@ export function parseAllowedOrigins(
 
 const ALLOWED_ORIGINS = parseAllowedOrigins();
 
+// Only the published Kapture extension. Unpacked dev builds get this same ID via
+// the "key" field in extension/manifest.json, so the pin holds in dev and prod.
+export const KAPTURE_EXTENSION_ID = 'ejfnegenodbdcodemkibocefmajjjjbn';
+
 const isExtensionOrigin = (origin: string | string[] | undefined): boolean =>
-  typeof origin === 'string' && origin.startsWith('chrome-extension://');
+  origin === `chrome-extension://${KAPTURE_EXTENSION_ID}`;
 
 // HTTP + general gate. No chrome-extension branch: the extension never makes
 // HTTP calls, so an extension Origin is not accepted here (nor on /mcp).

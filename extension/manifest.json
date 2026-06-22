@@ -3,6 +3,7 @@
   "name": "Kapture MCP Browser Automation",
   "short_name": "Kapture",
   "version": "1.2.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyReCh9SIkvreA9+7vxmE0vGYn99xY2wB50f/hlMgD2pKRz5qY/Z0PwKANoPQaA/iDe+IL9Ru0W2A/fkdLJd0ARVIpWq2/Ml/Z9xj5kbw8XsQjVUFAkXfw6uA4XpJk7IdC4gqQ3vb3FAIjIarInuPTldKEUZbhY2ylYDf59PwDhHtBJ3b3f6BwxJd/UVXhBJniQbvdA+0FprNvr1NFwxwWpsDMBUfSzmYvhunNPgrjexHkzTqvEDkk+WEboscYgYBdfxEb9KVWxvqjkXrmyi3Yn4eUsjei6MjzUuRdgXnrD5xySPQjecUvBM2UyrffOKoJyU0/jgIM9amrX78dDNypwIDAQAB",
   "description": "Remote browser automation via MCP - DevTools Extension",
   "author": "William Kapke",
   "homepage_url": "https://github.com/williamkapke/kapture",
