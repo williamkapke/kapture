@@ -1,15 +1,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isOriginAllowed, isWebSocketOriginAllowed, parseAllowedOrigins } from './origin-policy.js';
+import { isOriginAllowed, isWebSocketOriginAllowed, parseAllowedOrigins, isAssistantsReadOrigin, isAssistantsWriteOrigin } from './origin-policy.js';
 
 // Tests for the control-plane Origin allow-list (origin-policy.ts).
+
+const EXT = 'chrome-extension://ejfnegenodbdcodemkibocefmajjjjbn';
+const OTHER_EXT = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop';
 
 test('non-browser callers (no Origin) are allowed - scripts, bridge, curl', () => {
   assert.equal(isOriginAllowed(undefined), true);
 });
 
-test('the extension (chrome-extension://) is allowed', () => {
-  assert.equal(isOriginAllowed('chrome-extension://abcdefghijklmnopabcdefghijklmnop'), true);
+test('the general gate (HTTP) rejects all chrome-extension origins', () => {
+  // The extension makes no HTTP calls; it is accepted only on the root WS.
+  assert.equal(isOriginAllowed(EXT), false);
+  assert.equal(isOriginAllowed(OTHER_EXT), false);
 });
 
 test('allow-listed web origins are allowed', () => {
@@ -33,13 +38,16 @@ test('a duplicated Origin header (array) is rejected', () => {
   assert.equal(isOriginAllowed(['https://williamkapke.github.io', 'https://evil.com']), false);
 });
 
-// The WebSocket gate adds one path-scoped rule on top of isOriginAllowed: the
-// extension's chrome-extension:// origin is accepted on the root path (where it
-// connects) but not on /mcp (only no-Origin MCP clients use that path).
-test('WS: extension origin is accepted on root but rejected on /mcp', () => {
-  const ext = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop';
-  assert.equal(isWebSocketOriginAllowed('/', ext), true);
-  assert.equal(isWebSocketOriginAllowed('/mcp', ext), false);
+// The extension's one channel is the root WebSocket. A chrome-extension origin is
+// accepted there and nowhere else - not on /mcp, not on HTTP.
+test('WS root: a chrome-extension origin is accepted', () => {
+  assert.equal(isWebSocketOriginAllowed('/', EXT), true);
+  assert.equal(isWebSocketOriginAllowed('/', OTHER_EXT), true);
+});
+
+test('WS /mcp: no chrome-extension origin is accepted', () => {
+  assert.equal(isWebSocketOriginAllowed('/mcp', EXT), false);
+  assert.equal(isWebSocketOriginAllowed('/mcp', OTHER_EXT), false);
 });
 
 test('WS: no-Origin clients (the bridge / scripts) are accepted on /mcp', () => {
@@ -52,6 +60,24 @@ test('WS: allow-listed web origins pass, hostile ones are rejected, on both path
     assert.equal(isWebSocketOriginAllowed(path, 'https://williamkapke.github.io'), true);
     assert.equal(isWebSocketOriginAllowed(path, 'https://evil.com'), false);
   }
+});
+
+// The /assistants endpoints are reachable only from the welcome page's origins -
+// a present, browser-set Origin - so no-Origin scripts/curl can't reach them.
+test('assistants read: welcome-page origins only (localhost + GitHub Pages)', () => {
+  assert.equal(isAssistantsReadOrigin('http://localhost:61822'), true);
+  assert.equal(isAssistantsReadOrigin('http://127.0.0.1:61822'), true);
+  assert.equal(isAssistantsReadOrigin('https://williamkapke.github.io'), true); // localhost probe
+  assert.equal(isAssistantsReadOrigin(undefined), false);                       // no-Origin script/curl
+  assert.equal(isAssistantsReadOrigin('https://evil.com'), false);
+});
+
+test('assistants write: localhost only (not GitHub Pages, not no-Origin)', () => {
+  assert.equal(isAssistantsWriteOrigin('http://localhost:61822'), true);
+  assert.equal(isAssistantsWriteOrigin('http://127.0.0.1:61822'), true);
+  assert.equal(isAssistantsWriteOrigin('https://williamkapke.github.io'), false); // probe-and-redirect only
+  assert.equal(isAssistantsWriteOrigin(undefined), false);
+  assert.equal(isAssistantsWriteOrigin('https://evil.com'), false);
 });
 
 test('KAPTURE_ALLOWED_ORIGINS extends the allow-list', () => {

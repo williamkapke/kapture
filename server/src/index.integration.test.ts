@@ -15,8 +15,9 @@ process.env.KAPTURE_PORT = String(PORT);
 
 const BASE = `http://127.0.0.1:${PORT}`;
 const WS_BASE = `ws://127.0.0.1:${PORT}`;
-const EXT = 'chrome-extension://ejfnegenodbdcodemkibocefmajjjjbn'; // the Kapture extension
-const GOOD = 'https://williamkapke.github.io';                     // allow-listed
+const EXT = 'chrome-extension://ejfnegenodbdcodemkibocefmajjjjbn';       // the Kapture extension
+const OTHER_EXT = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop'; // another extension
+const GOOD = 'https://williamkapke.github.io';                          // allow-listed
 const EVIL = 'https://evil.example';
 
 let startServer: () => Promise<void>;
@@ -55,6 +56,12 @@ test('HTTP: hostile origin is rejected with 403 and no ACAO header', async () =>
   assert.equal(res.headers.get('access-control-allow-origin'), null);
 });
 
+test('HTTP: an extension origin is rejected (the extension uses the WS, not HTTP)', async () => {
+  const res = await fetch(`${BASE}/clients`, { headers: { Origin: EXT } });
+  assert.equal(res.status, 403);
+  assert.equal(res.headers.get('access-control-allow-origin'), null);
+});
+
 test('HTTP: allow-listed origin gets its Origin reflected (never a wildcard)', async () => {
   const res = await fetch(`${BASE}/clients`, { headers: { Origin: GOOD } });
   assert.equal(res.status, 200);
@@ -84,17 +91,36 @@ test('HTTP preflight: hostile OPTIONS is rejected with 403', async () => {
   assert.equal(res.status, 403);
 });
 
+test('HTTP /assistants: allowed from localhost + GitHub Pages, rejected otherwise', async () => {
+  assert.equal((await fetch(`${BASE}/assistants`, { headers: { Origin: 'http://localhost:61822' } })).status, 200);
+  assert.equal((await fetch(`${BASE}/assistants`, { headers: { Origin: GOOD } })).status, 200);
+  assert.equal((await fetch(`${BASE}/assistants`)).status, 403);                               // no Origin
+  assert.equal((await fetch(`${BASE}/assistants`, { headers: { Origin: EVIL } })).status, 403);
+});
+
+test('HTTP /assistants/configure: localhost only (Pages + no-Origin rejected)', async () => {
+  const post = (origin?: string) => fetch(`${BASE}/assistants/configure`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(origin ? { Origin: origin } : {}) },
+    body: '{}', // empty config map - writes nothing
+  });
+  assert.equal((await post('http://localhost:61822')).status, 200);
+  assert.equal((await post(GOOD)).status, 403);  // GitHub Pages copy never posts here
+  assert.equal((await post()).status, 403);      // no Origin (curl / script)
+});
+
 // ---- WebSocket upgrade -----------------------------------------------------
 
 test('WS: hostile origin upgrade is rejected (no 101)', async () => {
   assert.notEqual(await wsStatus('/', EVIL), 101);
 });
 
-test('WS: extension origin is accepted on the root path', async () => {
+test('WS: a chrome-extension origin is accepted on the root path', async () => {
   assert.equal(await wsStatus('/', EXT), 101);
+  assert.equal(await wsStatus('/', OTHER_EXT), 101);
 });
 
-test('WS: extension origin is rejected on /mcp', async () => {
+test('WS: no extension origin is accepted on /mcp', async () => {
   assert.notEqual(await wsStatus('/mcp', EXT), 101);
 });
 

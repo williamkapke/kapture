@@ -16,7 +16,7 @@ import { ResourceHandler } from './resource-handler.js';
 import { ToolHandler } from './tool-handler.js';
 import { checkIfPortInUse } from './port-check.js';
 import { detectAssistants, configureAssistants } from './assistant-manager.js';
-import { isOriginAllowed, isWebSocketOriginAllowed } from './origin-policy.js';
+import { isOriginAllowed, isWebSocketOriginAllowed, isAssistantsReadOrigin, isAssistantsWriteOrigin } from './origin-policy.js';
 
 
 // ========================================================================
@@ -230,6 +230,12 @@ const httpServer = createServer(async (req, res) => {
 
   // Handle /assistants endpoint
   if (req.url === '/assistants' && req.method === 'GET') {
+    // Only the welcome page calls this (local server + GitHub Pages copy).
+    if (!isAssistantsReadOrigin(origin)) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Origin not allowed' }));
+      return;
+    }
     try {
       const assistants = detectAssistants();
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -244,6 +250,13 @@ const httpServer = createServer(async (req, res) => {
 
   // Handle /assistants/configure endpoint
   if (req.url === '/assistants/configure' && req.method === 'POST') {
+    // Writes config files - localhost welcome page only (the GitHub Pages copy
+    // redirects to localhost before configuring, so it never posts here).
+    if (!isAssistantsWriteOrigin(origin)) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Origin not allowed' }));
+      return;
+    }
     try {
       let body = '';
       req.on('data', chunk => {
