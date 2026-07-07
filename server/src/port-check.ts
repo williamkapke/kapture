@@ -14,7 +14,11 @@ async function getPortInfo(port: number): Promise<{ inUse: boolean; pid?: string
   if (platform === 'darwin' || platform === 'linux') {
     command = `lsof -i :${port} -P -n | grep LISTEN || true`;
   } else if (platform === 'win32') {
-    command = `netstat -ano | findstr :${port} || exit 0`;
+    // Only LISTENING sockets mean the port is actually bound. Matching any
+    // line containing ":port" also catches TIME_WAIT/ESTABLISHED rows (and
+    // rows where :port is the FOREIGN address), which caused false positives:
+    // a stale TIME_WAIT entry would make a freshly spawned server exit(1).
+    command = `netstat -ano | findstr LISTENING || exit 0`;
   } else {
     return { inUse: false };
   }
@@ -31,14 +35,25 @@ async function getPortInfo(port: number): Promise<{ inUse: boolean; pid?: string
         command: parts[0]
       };
     } else if (platform === 'win32') {
-      const lines = stdout.trim().split('\n');
-      const listenLine = lines.find(l => l.includes('LISTENING')) || lines[0];
-      const parts = listenLine.trim().split(/\s+/);
-      const pid = parts[parts.length - 1];
-      return {
-        inUse: true,
-        pid: pid
-      };
+      // netstat columns: Proto  LocalAddress  ForeignAddress  State  PID
+      // Only count a row whose LOCAL address (col 1) ends with :port, so an
+      // unrelated listener or a leftover TIME_WAIT never registers as in-use.
+      const listenLine = stdout
+        .trim()
+        .split('\n')
+        .map(l => l.trim())
+        .find(l => {
+          const cols = l.split(/\s+/);
+          const local = cols[1] || '';
+          return local.endsWith(`:${port}`);
+        });
+      if (listenLine) {
+        const parts = listenLine.split(/\s+/);
+        return {
+          inUse: true,
+          pid: parts[parts.length - 1]
+        };
+      }
     }
   }
 
