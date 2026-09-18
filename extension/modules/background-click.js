@@ -31,12 +31,11 @@ export async function hover(tab, { selector, xpath, x, y }, click = false) {
     targetY = elementResult.element.bounds.y + elementResult.element.bounds.height / 2;
   }
 
-  // Get current mouse position
-  const currentPosition = mousePosition || { x: 0, y: 0 };
-
   try {
-    // Show cursor
-    await getFromContentScript(tabId, '_cursor', { show: true });
+    // Show cursor. Start from where the virtual cursor last stopped so it
+    // glides on from there; fall back to the real mouse position.
+    const cursorState = await getFromContentScript(tabId, '_cursor', { show: true });
+    const currentPosition = cursorState?.position || mousePosition || { x: 0, y: 0 };
 
     // Set initial cursor position
     await getFromContentScript(tabId, '_moveMouseSVG', { x: currentPosition.x, y: currentPosition.y });
@@ -125,12 +124,13 @@ export async function hover(tab, { selector, xpath, x, y }, click = false) {
       }
 
       if (click) {
+        getFromContentScript(tabId, '_clickEffect', { x: actualTargetX, y: actualTargetY }).catch(() => {});
         await dispatchMouseEvent({type: 'mousePressed', x: actualTargetX, y: actualTargetY, button: 'left', clickCount: 1});
         await dispatchMouseEvent({type: 'mouseReleased', x: actualTargetX, y: actualTargetY, button: 'left', clickCount: 1});
       }
     });
 
-    // Hide cursor after 1 second
+    // Hide cursor after 1 second (while connected it stays and just dims)
     setTimeout(async () => {
       await getFromContentScript(tabId, '_cursor', { show: false });
     }, 1000);

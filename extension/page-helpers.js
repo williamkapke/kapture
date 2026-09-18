@@ -331,7 +331,8 @@ const helpers = {
       document.body.classList.add('kapture-connecting');
     }
     // No class for disconnected state
-    
+
+    kaptureOverlay.setActive(status === 'connected');
     return { success: true };
   },
 
@@ -583,53 +584,9 @@ const helpers = {
     return respondWith({ blurred: true }, selector, xpath);
   },
   _cursor: ({show}) => {
-    const cursorId = 'kapture-cursor';
-    let cursor = document.getElementById(cursorId);
-
     try {
-      if (show === false) {
-        // Hide cursor
-        if (cursor) {
-          cursor.style.display = 'none';
-        }
-        return respondWith({ visible: false });
-      }
-
-      // Show cursor - create if doesn't exist
-      if (!cursor) {
-        cursor = document.createElement('div');
-        cursor.id = cursorId;
-
-        // Create cursor SVG
-        cursor.innerHTML = `
-          <svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 0 L0 16 L4.5 12.5 L7.5 20 L10 19 L7 11.5 L12 11 Z" 
-                  fill="white" 
-                  stroke="black" 
-                  stroke-width="1"/>
-          </svg>
-        `;
-
-        // Style the cursor container
-        cursor.style.cssText = `
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 20px;
-          height: 20px;
-          z-index: 2147483647;
-          pointer-events: none;
-          transform: translate(-2px, -2px);
-          transition: none;
-          will-change: transform;
-          filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.9)) drop-shadow(0 0 10px rgba(139, 92, 246, 0.5));
-        `;
-
-        document.body.appendChild(cursor);
-      }
-
-      cursor.style.display = 'block';
-      return respondWith({ visible: true });
+      const position = kaptureOverlay.showCursor(show !== false);
+      return respondWith({ visible: show !== false, position });
     } catch (e) {
       return respondWithError('CURSOR_ERROR', e.message);
     }
@@ -640,20 +597,24 @@ const helpers = {
     }
 
     try {
-      const cursor = document.getElementById('kapture-cursor');
-      if (!cursor) {
-        return respondWithError('CURSOR_NOT_FOUND', 'Cursor element not found. Call _cursor with show=true first');
-      }
-
       // Glide via CSS transition when a duration is given; snap otherwise
-      cursor.style.transition = duration > 0
-        ? `transform ${duration}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`
-        : 'none';
-      cursor.style.transform = `translate(${x - 2}px, ${y - 2}px)`;
+      kaptureOverlay.moveCursor(x, y, duration);
       return respondWith({ moved: true, x, y });
     } catch (e) {
       return respondWithError('MOVE_MOUSE_SVG_ERROR', e.message);
     }
+  },
+  _clickEffect: ({x, y}) => {
+    kaptureOverlay.clickEffect(x, y);
+    return { success: true };
+  },
+  _activity: ({label}) => {
+    kaptureOverlay.activity(label);
+    return { success: true };
+  },
+  _capturing: ({on}) => {
+    kaptureOverlay.setCapturing(on);
+    return { success: true };
   }
 };
 

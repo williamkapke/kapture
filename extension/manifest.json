@@ -17,7 +17,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["page-helpers.js", "content-script.js"],
+      "js": ["overlay.js", "page-helpers.js", "content-script.js"],
       "run_at": "document_start",
       "all_frames": false
     }

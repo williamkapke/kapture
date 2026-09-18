@@ -3,6 +3,20 @@ import { backgroundCommands, getTabInfo, detectBrowser } from './background-comm
 import { stopNetworkMonitor } from './background-network.js';
 import { getPendingDialog, dialogOpened, clearPendingDialog, dialogInterruptResult, dialogBlockedError } from './background-dialog.js';
 
+// Human-readable labels for the control overlay badge
+const ACTIVITY_LABELS = {
+  navigate: 'Navigating', back: 'Going back', forward: 'Going forward',
+  reload: 'Reloading', show: 'Showing tab',
+  click: 'Clicking', hover: 'Hovering', focus: 'Focusing', blur: 'Blurring',
+  fill: 'Filling', select: 'Selecting', scroll: 'Scrolling',
+  keypress: 'Pressing keys', type: 'Typing', insertText: 'Typing', clear: 'Clearing',
+  screenshot: 'Taking screenshot',
+  dom: 'Reading page', elements: 'Reading page', elementsFromPoint: 'Reading page',
+  getLogs: 'Reading console', watchConsole: 'Watching console',
+  networkMonitor: 'Watching network', networkRequests: 'Reading network', networkBody: 'Reading network',
+  evaluate: 'Running script', dialog: 'Handling dialog',
+};
+
 // Commands that still work (and are useful) while a JS dialog blocks the
 // renderer: answering the dialog, and browser-level tab actions.
 const DIALOG_EXEMPT_COMMANDS = new Set(['dialog', 'show', 'close']);
@@ -304,6 +318,11 @@ export class TabManager {
   }
 
   async _handleCommand(tabState, {command, params, id}) {
+    // Show what the client is doing on the page's control overlay
+    const label = ACTIVITY_LABELS[command];
+    if (label) {
+      chrome.tabs.sendMessage(tabState.tabId, { command: '_activity', params: { label } }).catch(() => {});
+    }
     try {
       let result;
       const openDialog = getPendingDialog(tabState.tabId);

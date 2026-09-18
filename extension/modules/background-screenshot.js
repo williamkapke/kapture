@@ -1,5 +1,5 @@
 // Import helper functions from background-commands
-import { getElement, getTabInfo, respondWithError, attachDebugger } from './background-commands.js';
+import { getElement, getTabInfo, respondWithError, attachDebugger, getFromContentScript } from './background-commands.js';
 
 export async function screenshot({tabId}, { scale = 0.5, quality = 0.5, format = 'webp', selector, xpath }) {
   let elementResult;
@@ -37,6 +37,9 @@ export async function screenshot({tabId}, { scale = 0.5, quality = 0.5, format =
     clip.scale = scale;
   }
 
+  // Keep the control overlay (border, badge, cursor) out of the capture
+  await getFromContentScript(tabId, '_capturing', { on: true }).catch(() => {});
+
   return attachDebugger(tabId, async () => {
     const screenshot = await chrome.debugger.sendCommand({ tabId }, 'Page.captureScreenshot', {
       format,
@@ -58,5 +61,6 @@ export async function screenshot({tabId}, { scale = 0.5, quality = 0.5, format =
   })
   .catch((err) => {
     return respondWithError(tabId,'SCREENSHOT_ERROR', err.message, null, null);
-  });
+  })
+  .finally(() => getFromContentScript(tabId, '_capturing', { on: false }).catch(() => {}));
 }
