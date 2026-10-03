@@ -6,7 +6,7 @@ import { dirname, join } from 'path';
 import { createRequire } from 'module';
 import { openSync } from 'fs';
 import { tmpdir } from 'os';
-import { ensureServer } from './bridge-lib.js';
+import { ensureServer, canSpawnDetachedServer } from './bridge-lib.js';
 
 process.title = 'Kapture MCP Bridge';
 
@@ -111,15 +111,14 @@ async function main() {
   // give up with exit(1). console.error (stderr) is safe; stdout is the MCP
   // channel.
   //
-  // Under Electron's bundled Node the detached child is skipped outright: it
-  // cannot survive there anyway, and the host's process monitor flags the
-  // spawned file and prompts the user about it on every session. Hosting
-  // in-process directly avoids both.
-  const isElectron = Boolean(process.versions.electron);
+  // Under a desktop host's bundled runtime the detached child is skipped
+  // outright: it cannot survive there anyway, and the host watches the spawned
+  // file and prompts the user about it on every launch and view change
+  // (issues #15, #24). Hosting in-process directly avoids both.
   const outcome = await ensureServer({
     host: HOST,
     port: PORT,
-    spawnDetached: isElectron ? undefined : spawnDetachedServer,
+    spawnDetached: canSpawnDetachedServer() ? spawnDetachedServer : undefined,
     startInProcess: startServerInProcess,
     log: (message) => console.error(message),
   });

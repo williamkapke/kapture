@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import net from 'net';
-import { probe, waitForPort, ensureServer } from './bridge-lib.js';
+import { probe, waitForPort, ensureServer, canSpawnDetachedServer } from './bridge-lib.js';
 
 test('waitForPort fails fast within its timeout budget when the server never comes up', async () => {
   // Regression guard for issue #7: when the spawned server never binds the
@@ -228,4 +228,70 @@ test('ensureServer treats an in-process EADDRINUSE as success when a racing chil
   });
 
   assert.equal(outcome, 'already-running');
+});
+
+// --- canSpawnDetachedServer (issues #15, #24) -------------------------------
+// Only a plain `node` may spawn the detached child. Desktop hosts watch the
+// file it is handed and prompt "Attach 'index.js' to this session?" on every
+// launch and view change, so they get the in-process server instead.
+
+const plainNode = { versions: {}, env: {}, execPath: String.raw`C:\Program Files\nodejs\node.exe` };
+
+test('canSpawnDetachedServer allows a plain node runtime', () => {
+  assert.equal(canSpawnDetachedServer(plainNode), true);
+  assert.equal(
+    canSpawnDetachedServer({ versions: {}, env: {}, execPath: '/usr/local/bin/node' }),
+    true
+  );
+});
+
+test('canSpawnDetachedServer refuses Electron hosts', () => {
+  assert.equal(canSpawnDetachedServer({ ...plainNode, versions: { electron: '31.0.0' } }), false);
+});
+
+test('canSpawnDetachedServer refuses a host that launched us as Electron-as-node', () => {
+  assert.equal(canSpawnDetachedServer({ ...plainNode, env: { ELECTRON_RUN_AS_NODE: '1' } }), false);
+});
+
+test('canSpawnDetachedServer refuses a packaged runtime not named node', () => {
+  assert.equal(
+    canSpawnDetachedServer({
+      ...plainNode,
+      execPath: String.raw`C:\Program Files\WindowsApps\Claude.exe`,
+    }),
+    false
+  );
+});
+
+test("canSpawnDetachedServer refuses a node bundled inside a desktop host's own directory", () => {
+  // Claude Desktop's built-in Node: named node.exe, but shipped with the app
+  assert.equal(
+    canSpawnDetachedServer({
+      ...plainNode,
+      execPath: String.raw`C:\Users\me\AppData\Local\AnthropicClaude\app-1.0.0\node.exe`,
+    }),
+    false
+  );
+  assert.equal(
+    canSpawnDetachedServer({
+      ...plainNode,
+      execPath: '/Applications/Claude.app/Contents/Resources/node',
+    }),
+    false
+  );
+});
+
+test('canSpawnDetachedServer honours the KAPTURE_DETACHED_SERVER override both ways', () => {
+  assert.equal(
+    canSpawnDetachedServer({ ...plainNode, env: { KAPTURE_DETACHED_SERVER: '0' } }),
+    false
+  );
+  assert.equal(
+    canSpawnDetachedServer({
+      versions: { electron: '31.0.0' },
+      env: { KAPTURE_DETACHED_SERVER: '1' },
+      execPath: String.raw`C:\Program Files\WindowsApps\Claude.exe`,
+    }),
+    true
+  );
 });

@@ -1,4 +1,51 @@
 import net from 'net';
+import path from 'path';
+
+export interface DetachedSpawnContext {
+  /** process.versions */
+  versions?: { electron?: string };
+  /** process.env */
+  env?: Record<string, string | undefined>;
+  /** process.execPath */
+  execPath?: string;
+}
+
+/**
+ * Whether this runtime may spawn the standalone server as a detached child.
+ *
+ * Only a plain `node` qualifies. Desktop MCP hosts run the bridge under their
+ * own bundled runtime, where the detached child cannot survive anyway, and
+ * where the host watches the JS file handed to that child and prompts the user
+ * about it on every launch and view change (issues #15 and #24: "Attach
+ * 'index.js' to this session?"). Those hosts host the server in-process
+ * instead - no child process, no prompt.
+ *
+ * KAPTURE_DETACHED_SERVER=0/1 overrides the detection either way.
+ */
+export function canSpawnDetachedServer({
+  versions = process.versions as { electron?: string },
+  env = process.env,
+  execPath = process.execPath,
+}: DetachedSpawnContext = {}): boolean {
+  const override = env.KAPTURE_DETACHED_SERVER;
+  if (override === '0' || override === 'false') return false;
+  if (override === '1' || override === 'true') return true;
+
+  // Electron, either as the host runtime itself or as a host that launched us
+  // as Node through its own binary.
+  if (versions.electron) return false;
+  if (env.ELECTRON_RUN_AS_NODE) return false;
+
+  // A bundled runtime that isn't named `node` is a packaged host, not a plain
+  // Node install.
+  if (!/^node(\.exe)?$/i.test(path.basename(execPath))) return false;
+
+  // A `node` binary shipped inside a desktop host's own install directory
+  // (e.g. Claude Desktop's built-in Node) is that host's runtime too.
+  if (/[\\/](?:claude|anthropic)[^\\/]*[\\/]/i.test(execPath)) return false;
+
+  return true;
+}
 
 /**
  * Resolve true if a TCP connection to host:port succeeds within timeoutMs.
